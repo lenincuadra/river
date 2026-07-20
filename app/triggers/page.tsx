@@ -42,7 +42,7 @@ export default async function TriggersPage() {
   return (
     <div className="flex flex-1 flex-col">
       <Topbar />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
         <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
           <Radar className="size-5" /> Radar
         </h1>
@@ -51,7 +51,7 @@ export default async function TriggersPage() {
         </p>
 
         {sorted.length === 0 ? (
-          <Empty className="mt-8 border border-dashed">
+          <Empty className="mt-10 border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <Radar />
@@ -108,7 +108,10 @@ function TriggerRow({
   return (
     <Card>
       <CardContent>
-        <div className="text-xs text-muted-foreground">{info.breadcrumb}</div>
+        <div className="text-xs text-muted-foreground">
+          {info.breadcrumb}
+          <span className="float-right">{fmtDate(trigger.created_at)}</span>
+        </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-2">
           <Link href={info.href} className="text-sm font-bold hover:underline">
             {info.title}
@@ -120,7 +123,7 @@ function TriggerRow({
         <p className="mt-1.5 text-sm text-muted-foreground">
           {triggerSummary(trigger, fmtDate)}
         </p>
-        <div className="mt-3">
+        <div className="mt-3 border-t border-border pt-3">
           <ResolveControls trigger={trigger} />
         </div>
       </CardContent>

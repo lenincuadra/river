@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Search, Radar, Inbox } from "lucide-react";
 import { db } from "@/db";
-import { entries, topics, events } from "@/db/schema";
+import { entries, topics, threads, events } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
 import { isDue, triggerSummary } from "@/lib/triggers";
 import { fmtRelative } from "@/lib/dates";
@@ -25,20 +25,29 @@ export async function Topbar({
 }: {
   currentTopic?: { id: string; title: string };
 }) {
-  const [allEntries, allTopics, allEvents, pendingTriggers] = await Promise.all([
-    db
-      .select({
-        id: entries.id,
-        topic_id: entries.topic_id,
-        created_at: entries.created_at,
-      })
-      .from(entries),
-    db.select().from(topics),
-    db
-      .select({ topic_id: events.topic_id, created_at: events.created_at })
-      .from(events),
-    allPendingTriggers(),
-  ]);
+  const [allEntries, allTopics, allThreads, allEvents, pendingTriggers] =
+    await Promise.all([
+      db
+        .select({
+          id: entries.id,
+          topic_id: entries.topic_id,
+          thread_id: entries.thread_id,
+          created_at: entries.created_at,
+        })
+        .from(entries),
+      db.select().from(topics),
+      db
+        .select({
+          id: threads.id,
+          topic_id: threads.topic_id,
+          parent_thread_id: threads.parent_thread_id,
+        })
+        .from(threads),
+      db
+        .select({ topic_id: events.topic_id, created_at: events.created_at })
+        .from(events),
+      allPendingTriggers(),
+    ]);
   const inboxCount = allEntries.filter((e) => e.topic_id === null).length;
   const dueCount = pendingTriggers.filter(isDue).length;
 
@@ -59,7 +68,19 @@ export async function Topbar({
     ]
       .filter(Boolean)
       .join(" · ");
-    return { id: t.id, title: t.title, state: t.state, meta };
+    return {
+      id: t.id,
+      title: t.title,
+      state: t.state,
+      meta,
+      // Solo threads de primer nivel: es lo que se ve al abrir el topic.
+      threads: allThreads.filter(
+        (th) => th.topic_id === t.id && th.parent_thread_id === null
+      ).length,
+      mainEntries: allEntries.filter(
+        (e) => e.topic_id === t.id && e.thread_id === null
+      ).length,
+    };
   });
 
   const navLink = (extra?: string) =>

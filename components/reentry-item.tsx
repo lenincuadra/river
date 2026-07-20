@@ -4,6 +4,7 @@ import { resolveTriggerAction } from "@/app/actions";
 import { TriggerFields } from "@/components/trigger-fields";
 import { FormDialog } from "@/components/form-dialog";
 import { SubmitButton } from "@/components/submit-button";
+import { fmtDate } from "@/components/feed";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -84,14 +85,19 @@ export function ReentryItem({
   return (
     <Card>
       <CardContent>
-        <div className="text-xs text-muted-foreground">{breadcrumb}</div>
+        <div className="text-xs text-muted-foreground">
+          {breadcrumb}
+          <span className="float-right">
+            {fmtDate(trigger.fire_date ?? trigger.created_at)}
+          </span>
+        </div>
         <Link href={href} className="mt-0.5 block text-sm font-bold hover:underline">
           {title}
         </Link>
         <p className="mt-2 text-sm text-muted-foreground">
           ¿Esto sigue teniendo sentido hoy?
         </p>
-        <div className="mt-3">
+        <div className="mt-3 border-t border-border pt-3">
           <ResolveControls trigger={trigger} />
         </div>
       </CardContent>

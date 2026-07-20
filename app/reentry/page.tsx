@@ -32,7 +32,7 @@ export default async function ReentryPage() {
   return (
     <div className="flex flex-1 flex-col">
       <Topbar />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
         <h1 className="text-xl font-bold tracking-tight">Reentry</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Lo que estaba dormido y hoy llegó su fecha. Nada se hace solo: vos
@@ -40,7 +40,7 @@ export default async function ReentryPage() {
         </p>
 
         {due.length === 0 ? (
-          <Empty className="mt-8 border border-dashed">
+          <Empty className="mt-10 border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <Waves className="text-river" />

@@ -16,7 +16,7 @@ import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
 import { FormDialog } from "@/components/form-dialog";
 import { SubmitButton } from "@/components/submit-button";
-import { Feed, fmtDate, lastArchivedReason } from "@/components/feed";
+import { Feed, FeedActionRow, fmtDate, lastArchivedReason } from "@/components/feed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -130,44 +130,53 @@ export default async function ThreadPage({
         />
 
         <div className="mt-6">
-          <Feed entries={threadEntries} events={threadEvents} />
-        </div>
-
-        {/* Agregar entry al thread */}
-        <form
-          action={addThreadEntryAction}
-          className="mt-8 rounded-lg border border-border bg-card p-4"
-        >
-          <input type="hidden" name="thread_id" value={thread.id} />
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="author_label"
-              className="text-xs text-muted-foreground"
-            >
-              Autor
-            </Label>
-            <Input
-              id="author_label"
-              name="author_label"
-              defaultValue="Yo"
-              className="h-7 w-32 text-sm"
-            />
-            <span className="text-xs text-muted-foreground">
-              (editalo para citar a alguien: &quot;Martina&quot;)
-            </span>
-          </div>
-          <Textarea
-            name="body"
-            required
-            placeholder={`Escribir una entry en ${thread.title}…`}
-            className="mt-3 min-h-20 text-sm"
+          <Feed
+            entries={threadEntries}
+            events={threadEvents}
+            tail={
+              // Agregar entry: sigue en el timeline, la línea llega hasta acá
+              <FeedActionRow
+                icon={<Pencil className="size-4" />}
+                iconClassName="border-add/50 bg-add/10 text-add"
+              >
+                <form
+                  action={addThreadEntryAction}
+                  className="rounded-lg border border-dashed border-border bg-card/50 p-4"
+                >
+                  <input type="hidden" name="thread_id" value={thread.id} />
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="author_label"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Autor
+                    </Label>
+                    <Input
+                      id="author_label"
+                      name="author_label"
+                      defaultValue="Yo"
+                      className="h-7 w-32 text-sm"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      (editalo para citar a alguien: &quot;Martina&quot;)
+                    </span>
+                  </div>
+                  <Textarea
+                    name="body"
+                    required
+                    placeholder={`Escribir una entry en ${thread.title}…`}
+                    className="mt-3 min-h-20 text-sm"
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <SubmitButton size="sm">
+                      <Pencil /> Agregar entry
+                    </SubmitButton>
+                  </div>
+                </form>
+              </FeedActionRow>
+            }
           />
-          <div className="mt-3 flex justify-end">
-            <SubmitButton size="sm">
-              <Pencil /> Agregar entry
-            </SubmitButton>
-          </div>
-        </form>
+        </div>
 
         {/* Subthreads: solo desde un thread de primer nivel (regla 5) */}
         {!isSubthread && (

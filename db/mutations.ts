@@ -1,7 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import { db } from "./index";
-import { topics, threads, entries, events, eventSources, triggers } from "./schema";
+import {
+  topics,
+  threads,
+  entries,
+  entryRevisions,
+  events,
+  eventSources,
+  triggers,
+} from "./schema";
 
 // Toda mutación pasa por acá: las reglas del sistema se validan en backend,
 // no solo en UI (CLAUDE.md). La tabla `events` solo recibe INSERT.
@@ -180,6 +188,23 @@ async function setState(
   }
 }
 
+// Si el estado cambia por fuera del radar (archivar o reactivar desde la
+// página del topic/thread), su disparador pendiente pierde sentido. Sin esto
+// queda un "fantasma" en el radar que al resolverse choca con el estado real
+// ("Ya está archivado." / "Ya está activo.").
+async function dismissPendingTriggers(targetType: TargetType, id: string) {
+  await db
+    .update(triggers)
+    .set({ status: "dismissed" })
+    .where(
+      and(
+        eq(triggers.target_type, targetType),
+        eq(triggers.target_id, id),
+        eq(triggers.status, "pending")
+      )
+    );
+}
+
 // Regla 3: nada se archiva sin motivo. Vale para topics y threads.
 export async function archiveTarget(input: {
   targetType: TargetType;
@@ -192,6 +217,7 @@ export async function archiveTarget(input: {
   const target = await getTarget(input.targetType, input.id);
   if (target.state === "archived") throw new Error("Ya está archivado.");
   await setState(input.targetType, input.id, "archived");
+  await dismissPendingTriggers(input.targetType, input.id);
   await db.insert(events).values({
     id: randomUUID(),
     topic_id: target.topicId,
@@ -210,6 +236,7 @@ export async function reactivateTarget(input: {
   const target = await getTarget(input.targetType, input.id);
   if (target.state === "active") throw new Error("Ya está activo.");
   await setState(input.targetType, input.id, "active");
+  await dismissPendingTriggers(input.targetType, input.id);
   await db.insert(events).values({
     id: randomUUID(),
     topic_id: target.topicId,
@@ -250,6 +277,8 @@ export async function snoozeTarget(input: {
     throw new Error("Un archived no se snoozea directamente: reactivalo primero.");
 
   await setState(input.targetType, input.id, "snoozed");
+  // Un solo disparador pendiente por target: el nuevo reemplaza al anterior.
+  await dismissPendingTriggers(input.targetType, input.id);
   await db.insert(events).values({
     id: randomUUID(),
     topic_id: target.topicId,
@@ -482,19 +511,46 @@ export async function convergeTopics(input: {
       created_at: now(),
     });
     // Un disparador pendiente ya no tiene sentido si el origen se archivó al converger.
-    await db
-      .update(triggers)
-      .set({ status: "dismissed" })
-      .where(
-        and(
-          eq(triggers.target_type, "topic"),
-          eq(triggers.target_id, s.topic_id),
-          eq(triggers.status, "pending")
-        )
-      );
+    await dismissPendingTriggers("topic", s.topic_id);
   }
 
   return destId;
+}
+
+// Regla 2: las entries se editan, no se borran. Editar siempre está permitido
+// y queda marcado con edited_at. Si la entry está citada como fuente de una
+// decisión, el texto anterior se preserva en entry_revisions antes de pisarlo.
+export async function editEntry(input: { entryId: string; body: string }) {
+  const body = input.body.trim();
+  if (!body) throw new Error("La entry no puede quedar vacía.");
+  const [entry] = await db
+    .select()
+    .from(entries)
+    .where(eq(entries.id, input.entryId));
+  if (!entry) throw new Error("La entry no existe.");
+  if (body === entry.body) return;
+
+  const [cited] = await db
+    .select()
+    .from(eventSources)
+    .where(
+      and(
+        eq(eventSources.source_type, "entry"),
+        eq(eventSources.source_id, entry.id)
+      )
+    );
+  if (cited) {
+    await db.insert(entryRevisions).values({
+      id: randomUUID(),
+      entry_id: entry.id,
+      body: entry.body,
+      replaced_at: now(),
+    });
+  }
+  await db
+    .update(entries)
+    .set({ body, edited_at: now() })
+    .where(eq(entries.id, entry.id));
 }
 
 // Regla 2: borrar solo mientras la entry está en el inbox,

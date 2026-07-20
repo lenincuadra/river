@@ -1,12 +1,21 @@
 import { isNull, eq } from "drizzle-orm";
 import { db } from "../db";
-import { entries, topics, threads, events, eventSources, triggers } from "../db/schema";
+import {
+  entries,
+  entryRevisions,
+  topics,
+  threads,
+  events,
+  eventSources,
+  triggers,
+} from "../db/schema";
 import {
   captureEntry,
   assignEntryToTopic,
   createTopicFromEntry,
   createThread,
   deleteInboxEntry,
+  editEntry,
   archiveTarget,
   reactivateTarget,
   snoozeTarget,
@@ -409,6 +418,65 @@ async function main() {
     console.log("30) FALLO: dejó citar una fuente de otro topic");
   } catch (err) {
     console.log("30) fuente ajena bloqueada OK:", (err as Error).message);
+  }
+
+  // --- Triggers fantasma: un cambio de estado por fuera del radar descarta
+  // el disparador pendiente (si no, el radar muestra items irresolubles) ---
+
+  // Archivar desde la página del thread mientras duerme → trigger dismissed
+  await snoozeTarget({ targetType: "thread", id: th2, trigger: { kind: "backlog" } });
+  await archiveTarget({ targetType: "thread", id: th2, reason: "prueba fantasma" });
+  const ghost1 = await pendingTriggerFor("thread", th2);
+  console.log(
+    "31) archivar por fuera del radar descarta el trigger:",
+    ghost1 === undefined ? "OK" : "FALLO"
+  );
+
+  // Reactivar desde la página mientras duerme → trigger dismissed
+  await reactivateTarget({ targetType: "thread", id: th2 }); // archived → active
+  await snoozeTarget({ targetType: "thread", id: th2, trigger: { kind: "backlog" } });
+  await reactivateTarget({ targetType: "thread", id: th2 });
+  const ghost2 = await pendingTriggerFor("thread", th2);
+  console.log(
+    "32) reactivar por fuera del radar descarta el trigger:",
+    ghost2 === undefined ? "OK" : "FALLO"
+  );
+
+  // --- Editar entries (regla 2): siempre permitido, marca edited_at; si está
+  // citada como fuente de una decisión, preserva el texto anterior ---
+
+  // Entry NO citada: se edita sin dejar revisión
+  await editEntry({ entryId: e1, body: "Prueba: captura sin destino (editada)" });
+  const [edited1] = await db.select().from(entries).where(eq(entries.id, e1));
+  const revs1 = await db
+    .select()
+    .from(entryRevisions)
+    .where(eq(entryRevisions.entry_id, e1));
+  console.log(
+    "33) editar entry no citada:",
+    edited1.body.endsWith("(editada)") && edited1.edited_at && revs1.length === 0
+      ? "OK"
+      : "FALLO"
+  );
+
+  // Entry citada por la decisión del check 28: la edición preserva revisión
+  const [before] = await db.select().from(entries).where(eq(entries.id, eMartina));
+  await editEntry({ entryId: eMartina, body: "Martina: texto corregido tras la decisión" });
+  const revs2 = await db
+    .select()
+    .from(entryRevisions)
+    .where(eq(entryRevisions.entry_id, eMartina));
+  console.log(
+    "34) editar entry citada preserva revisión:",
+    revs2.length === 1 && revs2[0].body === before.body ? "OK" : "FALLO"
+  );
+
+  // Vaciarla debe rechazarse
+  try {
+    await editEntry({ entryId: e1, body: "   " });
+    console.log("35) FALLO: dejó vaciar una entry");
+  } catch (err) {
+    console.log("35) entry vacía bloqueada OK:", (err as Error).message);
   }
 }
 

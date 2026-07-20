@@ -9,6 +9,7 @@ import {
   createThread,
   assignEntryToTopic,
   deleteInboxEntry,
+  editEntry,
   archiveTarget,
   reactivateTarget,
   snoozeTarget,
@@ -113,6 +114,13 @@ export async function createTopicFromEntryAction(formData: FormData) {
   );
   refresh();
   redirect(`/topics/${topicId}`);
+}
+
+export async function editEntryAction(formData: FormData) {
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return;
+  await editEntry({ entryId: String(formData.get("entry_id")), body });
+  refresh();
 }
 
 export async function deleteInboxEntryAction(formData: FormData) {

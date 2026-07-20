@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Diamond, Merge } from "lucide-react";
 import { EVENT_ICON, ENTRY_ICON } from "@/lib/event-icons";
+import { EditEntryDialog } from "@/components/edit-entry";
 import type { entries as entriesTable, events as eventsTable } from "@/db/schema";
 
 type Entry = typeof entriesTable.$inferSelect;
@@ -55,20 +56,47 @@ const EVENT_META: Record<
   converged_from: { className: "border-merge bg-merge/15 text-merge", label: () => "Recibió la convergencia" },
 };
 
+// Fila extra al final del timeline con el mismo layout que un item del feed:
+// así la línea vertical continúa hasta las acciones (agregar entry, decidir)
+// en vez de cortarse antes de un bloque suelto.
+export function FeedActionRow({
+  icon,
+  iconClassName = "border-border bg-muted text-muted-foreground",
+  children,
+}: {
+  icon: ReactNode;
+  iconClassName?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex gap-3">
+      <span
+        className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${iconClassName}`}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1 pt-0.5">{children}</div>
+    </div>
+  );
+}
+
 // La gramática GitHub del wireframe: ícono circular sobre un spine vertical,
 // con la card colgando al lado. Entries y eventos intercalados por fecha.
 export function Feed({
   entries,
   events,
-  sourceLabels = {},
+  sourceLinks = {},
   entryFooter,
+  tail,
 }: {
   entries: Entry[];
   events: Event[];
-  // labels de las fuentes citadas por cada evento decision (event_id → nombres)
-  sourceLabels?: Record<string, string[]>;
-  // extra opcional debajo de cada entry (ej: "⑂ Crear thread desde esta entry")
+  // fuentes citadas por cada evento decision (event_id → label + destino)
+  sourceLinks?: Record<string, { label: string; href: string }[]>;
+  // acción opcional dentro de la card de cada entry (ej: "Crear thread")
   entryFooter?: (entry: Entry) => ReactNode;
+  // filas finales del timeline (FeedActionRow): la línea sigue hasta ellas
+  tail?: ReactNode;
 }) {
   const items = [
     ...entries.map((e) => ({ kind: "entry" as const, date: e.created_at, entry: e })),
@@ -97,10 +125,18 @@ export function Feed({
                       {fmtDate(e.created_at)}
                     </span>
                   </div>
-                  <div className="mt-1.5 rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm">
+                  <div
+                    id={`entry-${e.id}`}
+                    className="mt-1.5 scroll-mt-24 rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm"
+                  >
                     {e.body}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1 border-t border-border pt-1.5">
+                      {entryFooter?.(e)}
+                      <span className="ml-auto">
+                        <EditEntryDialog entry={{ id: e.id, body: e.body }} />
+                      </span>
+                    </div>
                   </div>
-                  {entryFooter?.(e)}
                 </div>
               </div>
             );
@@ -110,7 +146,7 @@ export function Feed({
           const p = JSON.parse(ev.payload) as EventPayload;
           const meta = EVENT_META[ev.type];
           const Icon = EVENT_ICON[ev.type];
-          const labels = sourceLabels[ev.id] ?? [];
+          const links = sourceLinks[ev.id] ?? [];
           return (
             <div key={`ev-${ev.id}`} className="flex gap-3">
               <span
@@ -131,16 +167,17 @@ export function Feed({
                     {p.text && (
                       <div className="mt-1 text-sm text-muted-foreground">{p.text}</div>
                     )}
-                    {labels.length > 0 && (
+                    {links.length > 0 && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                         <span className="text-muted-foreground">fuentes:</span>
-                        {labels.map((label, i) => (
-                          <span
+                        {links.map((s, i) => (
+                          <Link
                             key={i}
-                            className="inline-flex items-center gap-1 rounded-full border border-src px-2 py-0.5 font-medium text-src"
+                            href={s.href}
+                            className="inline-flex items-center gap-1 rounded-full border border-src px-2 py-0.5 font-medium text-src hover:bg-src/10"
                           >
-                            <Diamond className="size-3" /> {label}
-                          </span>
+                            <Diamond className="size-3" /> {s.label}
+                          </Link>
                         ))}
                       </div>
                     )}
@@ -176,6 +213,7 @@ export function Feed({
             </div>
           );
         })}
+        {tail}
       </div>
     </div>
   );
