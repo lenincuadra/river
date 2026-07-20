@@ -1,4 +1,5 @@
 import { isNull } from "drizzle-orm";
+import { Inbox, Waves, Plus, ArrowRight } from "lucide-react";
 import { db } from "@/db";
 import { entries as entriesTable, topics as topicsTable } from "@/db/schema";
 import {
@@ -33,7 +34,9 @@ export default async function InboxPage() {
       <Topbar />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
-        <h1 className="text-xl font-bold tracking-tight">📥 Inbox</h1>
+        <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
+          <Inbox className="size-5" /> Inbox
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Capturas sin destino todavía. Procesalas: movelas a un topic, creá uno
           nuevo, o borralas (solo acá se puede borrar).
@@ -41,7 +44,7 @@ export default async function InboxPage() {
 
         {inboxEntries.length === 0 ? (
           <div className="mt-10 rounded-lg border border-border bg-card px-6 py-10 text-center">
-            <div className="text-3xl">🌊</div>
+            <Waves className="mx-auto size-8 text-river" />
             <p className="mt-3 text-sm text-muted-foreground">
               Inbox vacío. Capturá desde cualquier pantalla con{" "}
               <kbd className="rounded border border-border px-1.5 text-[10px]">⌘K</kbd>{" "}
@@ -80,7 +83,7 @@ export default async function InboxPage() {
                         ))}
                       </select>
                       <Button type="submit" size="sm" variant="outline">
-                        → Mover
+                        <ArrowRight /> Mover
                       </Button>
                     </form>
 
@@ -96,7 +99,7 @@ export default async function InboxPage() {
                         className="h-8 w-48 text-sm"
                       />
                       <Button type="submit" size="sm" variant="outline">
-                        ＋ Crear topic
+                        <Plus /> Crear topic
                       </Button>
                     </form>
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { like, or } from "drizzle-orm";
+import { Search, GitBranch } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -71,7 +72,7 @@ export default async function SearchPage({
 
   // Dónde vive una entry (para linkearla): inbox, main del topic o un thread.
   const entryLocation = (e: Entry) => {
-    if (!e.topic_id) return { href: "/inbox", label: "📥 Inbox" };
+    if (!e.topic_id) return { href: "/inbox", label: "Inbox" };
     const topic = topicsById.get(e.topic_id);
     if (e.thread_id) {
       const thread = threadsById.get(e.thread_id);
@@ -89,7 +90,9 @@ export default async function SearchPage({
     <div className="flex flex-1 flex-col">
       <Topbar />
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
-        <h1 className="text-xl font-bold tracking-tight">🔍 Buscar</h1>
+        <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
+          <Search className="size-5" /> Buscar
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           ¿Alguien ya mencionó esta idea? Buscá en topics, threads y entries.
         </p>
@@ -166,8 +169,8 @@ export default async function SearchPage({
                       {topic?.title ?? "?"}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold">
-                        {isSub ? "◦" : "🧵"} {t.title}
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                        <GitBranch className={isSub ? "size-3" : "size-3.5"} /> {t.title}
                       </span>
                       <StateBadge state={t.state} />
                     </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { isNull } from "drizzle-orm";
+import { Search, Radar, Inbox } from "lucide-react";
 import { db } from "@/db";
 import { entries, topics } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
@@ -39,7 +40,7 @@ export async function Topbar({
       <div className="flex-1" />
       <Link href="/search" aria-label="Buscar" title="Buscar">
         <Badge variant="outline" className="text-muted-foreground">
-          🔍 <span className="max-sm:hidden">Buscar</span>
+          <Search /> <span className="max-sm:hidden">Buscar</span>
         </Badge>
       </Link>
       <Link href="/triggers">
@@ -47,12 +48,12 @@ export async function Topbar({
           variant="outline"
           className={dueCount > 0 ? "border-src text-src" : "text-muted-foreground"}
         >
-          ⏰ Radar · {pendingTriggers.length}
+          <Radar /> Radar · {pendingTriggers.length}
         </Badge>
       </Link>
       <Link href="/inbox">
         <Badge variant="outline" className="text-muted-foreground">
-          📥 Inbox · {inboxEntries.length}
+          <Inbox /> Inbox · {inboxEntries.length}
         </Badge>
       </Link>
       <TopicSwitcher

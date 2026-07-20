@@ -1,3 +1,4 @@
+import { Archive, Play, Moon } from "lucide-react";
 import { archiveAction, reactivateAction, snoozeAction } from "@/app/actions";
 import { TriggerFields } from "@/components/trigger-fields";
 import { fmtDate } from "@/components/feed";
@@ -23,14 +24,14 @@ export function StateActions({
   if (state === "archived") {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-3.5 py-2.5 text-sm">
-        <span className="text-muted-foreground">
-          ▣ Archivado{archivedReason && <> · motivo: <b className="text-foreground">{archivedReason}</b></>}
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <Archive className="size-3.5" /> Archivado{archivedReason && <> · motivo: <b className="text-foreground">{archivedReason}</b></>}
         </span>
         <form action={reactivateAction} className="ml-auto">
           <input type="hidden" name="target_type" value={targetType} />
           <input type="hidden" name="target_id" value={targetId} />
           <Button type="submit" size="sm" variant="outline">
-            ▶ Reactivar
+            <Play /> Reactivar
           </Button>
         </form>
       </div>
@@ -41,15 +42,15 @@ export function StateActions({
     <div className="mt-3 flex flex-col gap-3">
       {state === "snoozed" && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-3.5 py-2.5 text-sm">
-          <span className="text-muted-foreground">
-            ☾ Snoozed
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Moon className="size-3.5" /> Snoozed
             {pendingTrigger && <> · {triggerSummary(pendingTrigger, fmtDate)}</>}
           </span>
           <form action={reactivateAction} className="ml-auto">
             <input type="hidden" name="target_type" value={targetType} />
             <input type="hidden" name="target_id" value={targetId} />
             <Button type="submit" size="sm" variant="outline">
-              ▶ Reactivar
+              <Play /> Reactivar
             </Button>
           </form>
         </div>
@@ -58,8 +59,8 @@ export function StateActions({
       <div className="flex flex-wrap items-start gap-3">
         {state === "active" && (
           <details className="min-w-0">
-            <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
-              ☾ Snooze…
+            <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+              <Moon className="size-3.5" /> Snooze…
             </summary>
             <form
               action={snoozeAction}
@@ -78,8 +79,8 @@ export function StateActions({
         )}
 
         <details className="min-w-0">
-          <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
-            ▣ Archivar…
+          <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+            <Archive className="size-3.5" /> Archivar…
           </summary>
           <form
             action={archiveAction}

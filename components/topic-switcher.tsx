@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronDown, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -37,7 +38,7 @@ export function TopicSwitcher({
       <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-semibold">
         {currentTitle && <span className="size-1.5 rounded-full bg-add" />}
         {currentTitle ?? "Topics"}
-        <span className="text-[10px] text-muted-foreground">▾</span>
+        <ChevronDown className="size-3.5 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56">
         {GROUPS.map(([state, label]) => {
@@ -59,7 +60,7 @@ export function TopicSwitcher({
         })}
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/topics/new" />}>
-          ＋ Nuevo topic
+          <Plus className="size-3.5" /> Nuevo topic
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

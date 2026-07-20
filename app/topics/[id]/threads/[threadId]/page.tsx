@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { GitBranch, Pencil, Plus } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -70,17 +71,17 @@ export default async function ThreadPage({
               {" / "}
               <Link
                 href={`/topics/${topic.id}/threads/${parent.id}`}
-                className="hover:underline"
+                className="inline-flex items-center gap-1 hover:underline"
               >
-                🧵 {parent.title}
+                <GitBranch className="size-3" /> {parent.title}
               </Link>
             </>
           )}
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold tracking-tight">
-            {isSubthread ? "◦" : "🧵"} {thread.title}
+          <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
+            <GitBranch className={isSubthread ? "size-4" : "size-5"} /> {thread.title}
           </h1>
           <StateBadge state={thread.state} />
           <span className="ml-auto text-xs text-muted-foreground">
@@ -90,8 +91,8 @@ export default async function ThreadPage({
 
         {originEntry && (
           <div className="mt-3 rounded-lg border border-merge/40 bg-merge/10 px-3.5 py-2.5 text-sm">
-            <span className="text-xs font-semibold text-merge">
-              ⑂ Creado desde una entry de {originEntry.author_label}:
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-merge">
+              <GitBranch className="size-3.5" /> Creado desde una entry de {originEntry.author_label}:
             </span>
             <p className="mt-1 text-muted-foreground">“{originEntry.body}”</p>
           </div>
@@ -133,7 +134,7 @@ export default async function ThreadPage({
           />
           <div className="mt-3 flex justify-end">
             <Button type="submit" size="sm">
-              ✎ Agregar entry
+              <Pencil /> Agregar entry
             </Button>
           </div>
         </form>
@@ -158,9 +159,9 @@ export default async function ThreadPage({
                   >
                     <Link
                       href={`/topics/${topic.id}/threads/${s.id}`}
-                      className="font-semibold hover:underline"
+                      className="inline-flex items-center gap-1 font-semibold hover:underline"
                     >
-                      ◦ {s.title}
+                      <GitBranch className="size-3" /> {s.title}
                     </Link>
                     <span className="float-right">
                       <StateBadge state={s.state} />
@@ -170,8 +171,8 @@ export default async function ThreadPage({
               </div>
             )}
             <details className="mt-3">
-              <summary className="cursor-pointer text-xs font-medium text-merge">
-                ＋ Crear subthread
+              <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-merge">
+                <Plus className="size-3.5" /> Crear subthread
               </summary>
               <form action={createThreadAction} className="mt-2 flex max-w-md gap-2">
                 <input type="hidden" name="topic_id" value={topic.id} />

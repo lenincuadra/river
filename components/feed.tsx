@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Diamond, Merge } from "lucide-react";
+import { EVENT_ICON, ENTRY_ICON } from "@/lib/event-icons";
 import type { entries as entriesTable, events as eventsTable } from "@/db/schema";
 
 type Entry = typeof entriesTable.$inferSelect;
@@ -36,19 +38,21 @@ export function fmtDate(iso: string) {
   }).format(new Date(iso));
 }
 
+// El ícono de cada tipo vive en lib/event-icons.ts (compartido con Multiverso);
+// acá solo el color del círculo y la etiqueta.
 const EVENT_META: Record<
   Event["type"],
-  { icon: string; className: string; label: (p: EventPayload) => string }
+  { className: string; label: (p: EventPayload) => string }
 > = {
-  created: { icon: "◉", className: "border-border bg-muted text-foreground", label: () => "Creado" },
-  shipped: { icon: "★", className: "border-border bg-muted text-foreground", label: (p) => `Shipped ${p.version ?? ""}` },
-  snoozed: { icon: "☾", className: "border-border bg-muted text-muted-foreground", label: () => "Snoozed" },
-  awakened: { icon: "☀", className: "border-border bg-muted text-foreground", label: () => "Despertó" },
-  reactivated: { icon: "▶", className: "border-add bg-add/15 text-add", label: () => "Reactivado" },
-  archived: { icon: "▣", className: "border-border bg-muted text-muted-foreground", label: (p) => `Archivado${p.reason ? ` · motivo: ${p.reason}` : ""}` },
-  decision: { icon: "✓", className: "border-foreground bg-card text-foreground", label: () => "Decisión" },
-  converged_into: { icon: "⇥", className: "border-merge bg-merge/15 text-merge", label: () => "Convergió en" },
-  converged_from: { icon: "⇤", className: "border-merge bg-merge/15 text-merge", label: () => "Recibió la convergencia" },
+  created: { className: "border-border bg-muted text-foreground", label: () => "Creado" },
+  shipped: { className: "border-border bg-muted text-foreground", label: (p) => `Shipped ${p.version ?? ""}` },
+  snoozed: { className: "border-border bg-muted text-muted-foreground", label: () => "Snoozed" },
+  awakened: { className: "border-border bg-muted text-foreground", label: () => "Despertó" },
+  reactivated: { className: "border-add bg-add/15 text-add", label: () => "Reactivado" },
+  archived: { className: "border-border bg-muted text-muted-foreground", label: (p) => `Archivado${p.reason ? ` · motivo: ${p.reason}` : ""}` },
+  decision: { className: "border-foreground bg-card text-foreground", label: () => "Decisión" },
+  converged_into: { className: "border-merge bg-merge/15 text-merge", label: () => "Convergió en" },
+  converged_from: { className: "border-merge bg-merge/15 text-merge", label: () => "Recibió la convergencia" },
 };
 
 // La gramática GitHub del wireframe: ícono circular sobre un spine vertical,
@@ -80,8 +84,8 @@ export function Feed({
             const e = item.entry;
             return (
               <div key={`en-${e.id}`} className="flex gap-3">
-                <span className="z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border border-add bg-add/15 text-sm text-add">
-                  ✎
+                <span className="z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border border-add bg-add/15 text-add">
+                  <ENTRY_ICON className="size-4" />
                 </span>
                 <div className="min-w-0 flex-1 pt-0.5">
                   <div className="text-sm">
@@ -105,13 +109,14 @@ export function Feed({
           const ev = item.event;
           const p = JSON.parse(ev.payload) as EventPayload;
           const meta = EVENT_META[ev.type];
+          const Icon = EVENT_ICON[ev.type];
           const labels = sourceLabels[ev.id] ?? [];
           return (
             <div key={`ev-${ev.id}`} className="flex gap-3">
               <span
-                className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border text-sm ${meta.className}`}
+                className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${meta.className}`}
               >
-                {meta.icon}
+                <Icon className="size-4" />
               </span>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="text-sm">
@@ -132,9 +137,9 @@ export function Feed({
                         {labels.map((label, i) => (
                           <span
                             key={i}
-                            className="rounded-full border border-src px-2 py-0.5 font-medium text-src"
+                            className="inline-flex items-center gap-1 rounded-full border border-src px-2 py-0.5 font-medium text-src"
                           >
-                            ◆ {label}
+                            <Diamond className="size-3" /> {label}
                           </span>
                         ))}
                       </div>
@@ -146,9 +151,9 @@ export function Feed({
                   <div className="mt-1.5 text-sm">
                     <Link
                       href={`/topics/${p.into_topic_id}`}
-                      className="font-semibold text-merge hover:underline"
+                      className="inline-flex items-center gap-1 font-semibold text-merge hover:underline"
                     >
-                      ⇥ {p.into_title}
+                      <Merge className="size-3.5" /> {p.into_title}
                     </Link>
                   </div>
                 )}

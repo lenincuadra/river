@@ -2,6 +2,20 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import {
+  Pencil,
+  CircleDot,
+  Star,
+  Moon,
+  Sun,
+  Play,
+  Archive,
+  Check,
+  Merge,
+  GitBranch,
+  Columns3,
+  type LucideIcon,
+} from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -25,20 +39,19 @@ type EventPayload = {
 };
 
 // Íconos/colores por tipo de nodo (mismo mapa semántico que el feed vertical:
-// entry=verde, merge=morado, disparadores=rosa). Provisorios en unicode hasta
-// la pasada a Lucide.
-const MARK: Record<string, { icon: string; cls: string }> = {
-  entry: { icon: "✎", cls: "border-add bg-add/15 text-add" },
-  created: { icon: "◉", cls: "border-border bg-muted text-foreground" },
-  shipped: { icon: "★", cls: "border-border bg-muted text-foreground" },
-  snoozed: { icon: "☾", cls: "border-border bg-muted text-muted-foreground" },
-  awakened: { icon: "☀", cls: "border-border bg-muted text-foreground" },
-  reactivated: { icon: "▶", cls: "border-add bg-add/15 text-add" },
-  archived: { icon: "▣", cls: "border-border bg-muted text-muted-foreground" },
-  decision: { icon: "✓", cls: "border-foreground bg-card text-foreground" },
-  converged_into: { icon: "⇥", cls: "border-merge bg-merge/15 text-merge" },
-  converged_from: { icon: "⇤", cls: "border-merge bg-merge/15 text-merge" },
-  trigger: { icon: "☾", cls: "border-src bg-src/20 text-src" },
+// entry=verde, merge=morado, disparadores=rosa). Íconos Lucide.
+const MARK: Record<string, { Icon: LucideIcon; cls: string }> = {
+  entry: { Icon: Pencil, cls: "border-add bg-add/15 text-add" },
+  created: { Icon: CircleDot, cls: "border-border bg-muted text-foreground" },
+  shipped: { Icon: Star, cls: "border-border bg-muted text-foreground" },
+  snoozed: { Icon: Moon, cls: "border-border bg-muted text-muted-foreground" },
+  awakened: { Icon: Sun, cls: "border-border bg-muted text-foreground" },
+  reactivated: { Icon: Play, cls: "border-add bg-add/15 text-add" },
+  archived: { Icon: Archive, cls: "border-border bg-muted text-muted-foreground" },
+  decision: { Icon: Check, cls: "border-foreground bg-card text-foreground" },
+  converged_into: { Icon: Merge, cls: "border-merge bg-merge/15 text-merge" },
+  converged_from: { Icon: Merge, cls: "border-merge bg-merge/15 text-merge" },
+  trigger: { Icon: Moon, cls: "border-src bg-src/20 text-src" },
 };
 
 // La hora actual se lee en un helper (no en el cuerpo del componente): la
@@ -63,7 +76,7 @@ function eventLabel(type: string, p: EventPayload) {
   }
 }
 
-type LaneNode = { t: number; icon: string; cls: string; label: string };
+type LaneNode = { t: number; Icon: LucideIcon; cls: string; label: string };
 type Lane = {
   key: string;
   kind: "main" | "thread" | "subthread";
@@ -130,14 +143,14 @@ export default async function MultiversePage({
 
   const entryNode = (e: typeof allEntries[number]): LaneNode => ({
     t: ms(e.created_at),
-    icon: MARK.entry.icon,
+    Icon: MARK.entry.Icon,
     cls: MARK.entry.cls,
     label: `${e.author_label}: ${e.body}`,
   });
   const eventNode = (ev: typeof allEvents[number]): LaneNode => {
     const p = JSON.parse(ev.payload) as EventPayload;
     const m = MARK[ev.type] ?? MARK.created;
-    return { t: ms(ev.created_at), icon: m.icon, cls: m.cls, label: eventLabel(ev.type, p) };
+    return { t: ms(ev.created_at), Icon: m.Icon, cls: m.cls, label: eventLabel(ev.type, p) };
   };
   const branchTime = (t: typeof allThreads[number]) => {
     if (t.origin_entry_id) {
@@ -181,7 +194,12 @@ export default async function MultiversePage({
   ): Lane => ({
     key: t.id,
     kind,
-    title: `${kind === "subthread" ? "◦" : "🧵"} ${t.title}`,
+    title: (
+      <span className="inline-flex items-center gap-1.5">
+        <GitBranch className={kind === "subthread" ? "size-3" : "size-3.5"} />
+        {t.title}
+      </span>
+    ),
     href: `/topics/${id}/threads/${t.id}`,
     state: t.state,
     branchPct: xPct(branchTime(t)),
@@ -244,9 +262,9 @@ export default async function MultiversePage({
           <span className="text-sm text-muted-foreground">· Multiverso</span>
           <Link
             href={`/topics/${id}`}
-            className="ml-auto rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
-            ▤ Ver como Board
+            <Columns3 className="size-3.5" /> Ver como Board
           </Link>
         </div>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -257,10 +275,10 @@ export default async function MultiversePage({
 
         {/* Leyenda */}
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span><span className="text-add">✎</span> entry</span>
-          <span><span className="text-foreground">★</span> shipped · <span className="text-foreground">✓</span> decisión</span>
-          <span><span className="text-merge">⑂</span> rama · <span className="text-merge">⇥</span> convergió</span>
-          <span><span className="text-src">☾</span> disparador (zona futuro)</span>
+          <span className="inline-flex items-center gap-1"><Pencil className="size-3 text-add" /> entry</span>
+          <span className="inline-flex items-center gap-1"><Star className="size-3 text-foreground" /> shipped · <Check className="size-3 text-foreground" /> decisión</span>
+          <span className="inline-flex items-center gap-1"><GitBranch className="size-3 text-merge" /> rama · <Merge className="size-3 text-merge" /> convergió</span>
+          <span className="inline-flex items-center gap-1"><Moon className="size-3 text-src" /> disparador (zona futuro)</span>
         </div>
 
         {/* Timeline horizontal */}
@@ -355,10 +373,10 @@ export default async function MultiversePage({
                       <span
                         key={i}
                         title={`${fmtDate(new Date(n.t).toISOString())} — ${n.label}`}
-                        className={`absolute top-1/2 z-[1] flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[11px] ${n.cls}`}
+                        className={`absolute top-1/2 z-[1] flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border ${n.cls}`}
                         style={{ left: `${xPct(n.t)}%` }}
                       >
-                        {n.icon}
+                        <n.Icon className="size-3" />
                       </span>
                     ))}
                     {/* disparadores de fecha (zona futuro) */}
@@ -366,10 +384,10 @@ export default async function MultiversePage({
                       <span
                         key={`t-${i}`}
                         title={tr.label}
-                        className={`absolute top-1/2 z-[1] flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[11px] ${MARK.trigger.cls}`}
+                        className={`absolute top-1/2 z-[1] flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border ${MARK.trigger.cls}`}
                         style={{ left: `${tr.pct}%` }}
                       >
-                        {MARK.trigger.icon}
+                        <Moon className="size-3" />
                       </span>
                     ))}
                   </div>
@@ -396,7 +414,7 @@ export default async function MultiversePage({
                   href={u.href}
                   className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-sm hover:bg-muted/40"
                 >
-                  <span className="text-src">☾</span>
+                  <Moon className="size-4 shrink-0 text-src" />
                   <span className="font-semibold">{u.target}</span>
                   <span className="text-muted-foreground">· {u.label}</span>
                 </Link>

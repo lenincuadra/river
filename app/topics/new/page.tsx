@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { createTopicAction } from "@/app/actions";
 import { Topbar } from "@/components/topbar";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,7 +16,9 @@ export default function NewTopicPage() {
       <main className="mx-auto w-full max-w-xl flex-1 px-5 py-10">
         <Card>
           <CardHeader>
-            <CardTitle>＋ Nuevo topic</CardTitle>
+            <CardTitle className="inline-flex items-center gap-2">
+              <Plus className="size-4" /> Nuevo topic
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form action={createTopicAction} className="flex flex-col gap-3">

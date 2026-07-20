@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Play, Moon, Archive } from "lucide-react";
 import { resolveTriggerAction } from "@/app/actions";
 import { TriggerFields } from "@/components/trigger-fields";
 import { Button } from "@/components/ui/button";
@@ -15,13 +16,13 @@ export function ResolveControls({ trigger }: { trigger: Trigger }) {
         <input type="hidden" name="trigger_id" value={trigger.id} />
         <input type="hidden" name="action" value="reactivate" />
         <Button type="submit" size="sm">
-          ▶ Reactivar
+          <Play /> Reactivar
         </Button>
       </form>
 
       <details className="min-w-0">
-        <summary className="cursor-pointer rounded-md border border-border px-3 py-1.5 text-xs font-semibold">
-          ☾ Volver a dormir
+        <summary className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold">
+          <Moon className="size-3.5" /> Volver a dormir
         </summary>
         <form
           action={resolveTriggerAction}
@@ -39,8 +40,8 @@ export function ResolveControls({ trigger }: { trigger: Trigger }) {
       </details>
 
       <details className="min-w-0">
-        <summary className="cursor-pointer rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-          ▣ Archivar
+        <summary className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+          <Archive className="size-3.5" /> Archivar
         </summary>
         <form
           action={resolveTriggerAction}

@@ -1,3 +1,4 @@
+import { Star } from "lucide-react";
 import { shipAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +9,8 @@ import { Input } from "@/components/ui/input";
 export function ShipAction({ topicId }: { topicId: string }) {
   return (
     <details className="mt-3">
-      <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
-        ★ Marcar como Shipped…
+      <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+        <Star className="size-3.5" /> Marcar como Shipped…
       </summary>
       <form action={shipAction} className="mt-2 flex max-w-xs items-center gap-2">
         <input type="hidden" name="topic_id" value={topicId} />

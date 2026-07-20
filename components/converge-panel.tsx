@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Merge } from "lucide-react";
 import { convergeAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,8 +34,8 @@ export function ConvergePanel({ topics }: { topics: Item[] }) {
 
   return (
     <details className="mt-8 rounded-lg border border-border bg-card p-4">
-      <summary className="cursor-pointer text-sm font-semibold text-merge">
-        ⇥ Convergir dos o más topics
+      <summary className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-merge">
+        <Merge className="size-4" /> Convergir dos o más topics
       </summary>
       <p className="mt-2 max-w-2xl text-xs text-muted-foreground">
         Cuando dos temas resultan ser el mismo, se unen en uno. Los orígenes se

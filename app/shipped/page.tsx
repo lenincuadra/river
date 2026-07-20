@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
+import { Star } from "lucide-react";
 import { db } from "@/db";
 import { topics as topicsTable, events as eventsTable } from "@/db/schema";
 import { Topbar } from "@/components/topbar";
@@ -41,7 +42,9 @@ export default async function ShippedPage() {
     <div className="flex flex-1 flex-col">
       <Topbar />
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
-        <h1 className="text-xl font-bold tracking-tight">★ Versiones</h1>
+        <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
+          <Star className="size-5" /> Versiones
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Qué se shippeó en cada versión del producto. Shipped es un evento, no
           un estado: un topic acá puede seguir activo o dormido.
@@ -49,8 +52,8 @@ export default async function ShippedPage() {
 
         {versions.length === 0 ? (
           <div className="mt-8 rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            Todavía no se shippeó nada. Cuando un topic se concrete, estampá su
-            versión con ★ Marcar como Shipped y aparecerá acá.
+            Todavía no se shippeó nada. Cuando un topic se concrete, marcá su
+            versión como Shipped y aparecerá acá.
           </div>
         ) : (
           <div className="mt-6 flex flex-col gap-4">
@@ -74,7 +77,7 @@ export default async function ShippedPage() {
                         key={`${it.topicId}-${i}`}
                         className="flex items-center gap-2 text-sm"
                       >
-                        <span className="text-add">★</span>
+                        <Star className="size-3.5 shrink-0 text-add" />
                         <Link
                           href={`/topics/${it.topicId}`}
                           className="font-medium hover:underline"

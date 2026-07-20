@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
+import { Star, Waypoints, GitBranch, Pencil } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -89,13 +90,13 @@ export default async function TopicPage({
           <h1 className="text-xl font-bold tracking-tight">{topic.title}</h1>
           <StateBadge state={topic.state} />
           {shippedVersion && (
-            <Badge variant="secondary">★ Shipped {shippedVersion}</Badge>
+            <Badge variant="secondary"><Star /> Shipped {shippedVersion}</Badge>
           )}
           <Link
             href={`/topics/${topic.id}/multiverse`}
-            className="ml-auto rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
-            ◇ Multiverso
+            <Waypoints className="size-3.5" /> Multiverso
           </Link>
           <span className="text-xs text-muted-foreground">
             desde {fmtDate(topic.created_at)}
@@ -125,8 +126,8 @@ export default async function TopicPage({
             sourceLabels={sourceLabels}
             entryFooter={(e) => (
               <details className="mt-1.5">
-                <summary className="cursor-pointer text-xs font-medium text-merge">
-                  ⑂ Crear thread desde esta entry
+                <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-merge">
+                  <GitBranch className="size-3.5" /> Crear thread desde esta entry
                 </summary>
                 <form action={createThreadAction} className="mt-2 flex gap-2">
                   <input type="hidden" name="topic_id" value={topic.id} />
@@ -174,7 +175,7 @@ export default async function TopicPage({
           />
           <div className="mt-3 flex justify-end">
             <Button type="submit" size="sm">
-              ✎ Agregar entry
+              <Pencil /> Agregar entry
             </Button>
           </div>
         </form>
@@ -186,7 +187,8 @@ export default async function TopicPage({
         {topThreads.length === 0 ? (
           <div className="mt-4 rounded-lg border border-border bg-card px-6 py-8 text-center text-sm text-muted-foreground">
             Este topic todavía no se ramificó. Cuando un debate no pueda
-            convivir en el main, creá un thread desde su entry (⑂).
+            convivir en el main, creá un thread desde su entry{" "}
+            <GitBranch className="inline size-3.5 align-text-bottom text-merge" />.
           </div>
         ) : (
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -197,7 +199,7 @@ export default async function TopicPage({
                 <div key={t.id} className="flex flex-col">
                   <div className="text-xs text-muted-foreground">
                     <span className="mr-1 inline-flex size-6 items-center justify-center rounded-full border border-merge bg-merge/15 text-merge">
-                      ⑂
+                      <GitBranch className="size-3.5" />
                     </span>
                     {author ? (
                       <>
@@ -213,9 +215,9 @@ export default async function TopicPage({
                     <div className="text-sm font-bold">
                       <Link
                         href={`/topics/${topic.id}/threads/${t.id}`}
-                        className="hover:underline"
+                        className="inline-flex items-center gap-1.5 hover:underline"
                       >
-                        🧵 {t.title}
+                        <GitBranch className="size-4" /> {t.title}
                       </Link>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -236,9 +238,9 @@ export default async function TopicPage({
                           >
                             <Link
                               href={`/topics/${topic.id}/threads/${s.id}`}
-                              className="font-semibold hover:underline"
+                              className="inline-flex items-center gap-1 font-semibold hover:underline"
                             >
-                              ◦ {s.title}
+                              <GitBranch className="size-3" /> {s.title}
                             </Link>
                             <span className="ml-2 text-muted-foreground">
                               {entryCount(s.id)}{" "}
@@ -260,8 +262,8 @@ export default async function TopicPage({
 
         {/* Thread sin entry de origen ("creado por mí") */}
         <details className="mt-4">
-          <summary className="cursor-pointer text-xs font-medium text-merge">
-            ⑂ Nuevo thread (sin entry de origen)
+          <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-merge">
+            <GitBranch className="size-3.5" /> Nuevo thread (sin entry de origen)
           </summary>
           <form action={createThreadAction} className="mt-2 flex max-w-md gap-2">
             <input type="hidden" name="topic_id" value={topic.id} />

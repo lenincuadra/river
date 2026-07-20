@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Radar } from "lucide-react";
 import { db } from "@/db";
 import { topics as topicsTable, threads as threadsTable } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
@@ -34,7 +35,9 @@ export default async function TriggersPage() {
     <div className="flex flex-1 flex-col">
       <Topbar />
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
-        <h1 className="text-xl font-bold tracking-tight">⏰ Radar</h1>
+        <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
+          <Radar className="size-5" /> Radar
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Todo lo que hoy está dormido, esperando su disparador.
         </p>

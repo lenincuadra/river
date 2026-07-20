@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Plus, X, ArrowRight } from "lucide-react";
 import { captureAction } from "@/app/actions";
 
 type TopicRef = { id: string; title: string } | null;
@@ -32,7 +33,7 @@ export function CaptureInput({ topic }: { topic: TopicRef }) {
       }}
       className="flex min-w-0 max-w-xl flex-1 items-center gap-2 rounded-lg border-2 border-input bg-card px-3 py-1.5 transition-colors focus-within:border-ring"
     >
-      <span className="text-muted-foreground">＋</span>
+      <Plus className="size-4 shrink-0 text-muted-foreground" />
       <input
         ref={inputRef}
         name="body"
@@ -42,16 +43,16 @@ export function CaptureInput({ topic }: { topic: TopicRef }) {
       />
       {topic && withTopic && (
         <>
-          <span className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-            → {topic.title}
+          <span className="flex items-center gap-1 whitespace-nowrap rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+            <ArrowRight className="size-3" /> {topic.title}
             <button
               type="button"
               aria-label="Quitar destino: capturar al inbox"
               title="Quitar destino: capturar al inbox"
               onClick={() => setWithTopic(false)}
-              className="hover:text-foreground"
+              className="inline-flex hover:text-foreground"
             >
-              ✕
+              <X className="size-3" />
             </button>
           </span>
           <input type="hidden" name="topic_id" value={topic.id} />

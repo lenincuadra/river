@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlarmClock, Star, Plus, Merge, ArrowRight } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -117,14 +118,16 @@ export default async function Home({
             href="/reentry"
             className="mb-6 flex items-center gap-3 rounded-lg border border-src bg-src/10 px-4 py-3 text-sm hover:bg-src/15"
           >
-            <span className="text-lg">⏰</span>
+            <AlarmClock className="size-5 text-src" />
             <span>
               <b>
                 {dueCount} {dueCount === 1 ? "tema despertó" : "temas despertaron"}
               </b>{" "}
               hoy — ¿siguen teniendo sentido?
             </span>
-            <span className="ml-auto font-semibold text-src">Revisar →</span>
+            <span className="ml-auto inline-flex items-center gap-1 font-semibold text-src">
+              Revisar <ArrowRight className="size-4" />
+            </span>
           </Link>
         )}
 
@@ -135,13 +138,13 @@ export default async function Home({
             href="/shipped"
             className={buttonVariants({ size: "sm", variant: "ghost" })}
           >
-            ★ Versiones
+            <Star className="size-4" /> Versiones
           </Link>
           <Link
             href="/topics/new"
             className={buttonVariants({ size: "sm", variant: "outline" })}
           >
-            ＋ Nuevo topic
+            <Plus className="size-4" /> Nuevo topic
           </Link>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -187,7 +190,7 @@ export default async function Home({
                   </CardTitle>
                   <StateBadge state={topic.state} />
                   {shippedVersion && (
-                    <Badge variant="secondary">★ Shipped {shippedVersion}</Badge>
+                    <Badge variant="secondary"><Star /> Shipped {shippedVersion}</Badge>
                   )}
                   <span className="ml-auto text-xs text-muted-foreground">
                     activo desde {monthYear(topic.created_at)}
@@ -215,9 +218,9 @@ export default async function Home({
                   <div className="mt-2 text-xs">
                     <Link
                       href={`/topics/${convergedInto.into_topic_id}`}
-                      className="font-medium text-merge hover:underline"
+                      className="inline-flex items-center gap-1 font-medium text-merge hover:underline"
                     >
-                      ⇥ convergió en {convergedInto.into_title}
+                      <Merge className="size-3.5" /> convergió en {convergedInto.into_title}
                     </Link>
                   </div>
                 )}
