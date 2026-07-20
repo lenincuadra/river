@@ -5,6 +5,13 @@ import { allPendingTriggers } from "@/db/mutations";
 import { isDue, targetInfo } from "@/lib/triggers";
 import { Topbar } from "@/components/topbar";
 import { ReentryItem } from "@/components/reentry-item";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export const dynamic = "force-dynamic";
 
@@ -33,10 +40,15 @@ export default async function ReentryPage() {
         </p>
 
         {due.length === 0 ? (
-          <div className="mt-8 rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            <Waves className="mx-auto size-8 text-river" />
-            <p className="mt-3">Nada te espera hoy. El río sigue su curso.</p>
-          </div>
+          <Empty className="mt-8 border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Waves className="text-river" />
+              </EmptyMedia>
+              <EmptyTitle>Nada te espera hoy</EmptyTitle>
+              <EmptyDescription>El río sigue su curso.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="mt-6 flex flex-col gap-4">
             {due.map((trigger) => {

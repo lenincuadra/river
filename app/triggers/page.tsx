@@ -8,6 +8,14 @@ import { Topbar } from "@/components/topbar";
 import { ReentryItem, ResolveControls } from "@/components/reentry-item";
 import { fmtDate } from "@/components/feed";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +51,17 @@ export default async function TriggersPage() {
         </p>
 
         {sorted.length === 0 ? (
-          <div className="mt-8 rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            No hay nada snoozeado. Todo lo demás está activo o archivado.
-          </div>
+          <Empty className="mt-8 border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Radar />
+              </EmptyMedia>
+              <EmptyTitle>El radar está despejado</EmptyTitle>
+              <EmptyDescription>
+                No hay nada snoozeado. Todo lo demás está activo o archivado.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="mt-6 flex flex-col gap-4">
             {sorted.map((trigger) => (
@@ -88,28 +104,26 @@ function TriggerRow({
   }
 
   // No vencido: se puede revisar igual a mano (condición cumplida, backlog).
+  // Las tres salidas quedan a la vista: dos son diálogos, no ocupan lugar.
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="text-xs text-muted-foreground">{info.breadcrumb}</div>
-      <div className="mt-0.5 flex flex-wrap items-center gap-2">
-        <Link href={info.href} className="text-sm font-bold hover:underline">
-          {info.title}
-        </Link>
-        <Badge variant="outline" className="text-muted-foreground">
-          {KIND_LABEL[trigger.kind]}
-        </Badge>
-      </div>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        {triggerSummary(trigger, fmtDate)}
-      </p>
-      <details className="mt-2">
-        <summary className="cursor-pointer text-xs font-medium text-merge">
-          Revisar ahora
-        </summary>
-        <div className="mt-2">
+    <Card>
+      <CardContent>
+        <div className="text-xs text-muted-foreground">{info.breadcrumb}</div>
+        <div className="mt-0.5 flex flex-wrap items-center gap-2">
+          <Link href={info.href} className="text-sm font-bold hover:underline">
+            {info.title}
+          </Link>
+          <Badge variant="outline" className="text-muted-foreground">
+            {KIND_LABEL[trigger.kind]}
+          </Badge>
+        </div>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {triggerSummary(trigger, fmtDate)}
+        </p>
+        <div className="mt-3">
           <ResolveControls trigger={trigger} />
         </div>
-      </details>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

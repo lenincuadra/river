@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlarmClock, Star, Plus, Merge, ArrowRight } from "lucide-react";
+import { AlarmClock, Star, Plus, Merge, ArrowRight, Waves } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -21,6 +21,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export const dynamic = "force-dynamic";
 
@@ -131,9 +138,11 @@ export default async function Home({
           </Link>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold tracking-tight">Topics</h1>
           <div className="flex-1" />
+          {/* Convergence (Fase 5): unir dos o más topics en uno. */}
+          {convergibles.length >= 2 && <ConvergePanel topics={convergibles} />}
           <Link
             href="/shipped"
             className={buttonVariants({ size: "sm", variant: "ghost" })}
@@ -173,9 +182,18 @@ export default async function Home({
         </div>
 
         {rows.length === 0 && (
-          <div className="mt-6 rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            No hay topics en este estado.
-          </div>
+          <Empty className="mt-6 border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Waves className="text-river" />
+              </EmptyMedia>
+              <EmptyTitle>Nada en este estado</EmptyTitle>
+              <EmptyDescription>
+                Los topics viven en tres estados: activos (se trabajan ahora),
+                dormidos (esperan su disparador) y archivados (con motivo).
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
 
         <div className="mt-6 flex flex-col gap-4">
@@ -229,8 +247,6 @@ export default async function Home({
           ))}
         </div>
 
-        {/* Convergence (Fase 5): unir dos o más topics en uno. */}
-        {convergibles.length >= 2 && <ConvergePanel topics={convergibles} />}
       </main>
     </div>
   );

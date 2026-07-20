@@ -17,11 +17,22 @@ import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
 import { ShipAction } from "@/components/ship-action";
 import { DecisionForm } from "@/components/decision-form";
+import { FormDialog } from "@/components/form-dialog";
+import { SubmitButton } from "@/components/submit-button";
 import { Feed, fmtDate, lastArchivedReason } from "@/components/feed";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export const dynamic = "force-dynamic";
 
@@ -109,9 +120,9 @@ export default async function TopicPage({
           )}
           <Link
             href={`/topics/${topic.id}/multiverse`}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            className={`ml-auto ${buttonVariants({ variant: "outline", size: "sm" })} rounded-full text-muted-foreground`}
           >
-            <Waypoints className="size-3.5" /> Multiverso
+            <Waypoints /> Multiverso
           </Link>
           <span className="text-xs text-muted-foreground">
             desde {fmtDate(topic.created_at)}
@@ -140,24 +151,42 @@ export default async function TopicPage({
             events={mainEvents}
             sourceLabels={sourceLabels}
             entryFooter={(e) => (
-              <details className="mt-1.5">
-                <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-merge">
-                  <GitBranch className="size-3.5" /> Crear thread desde esta entry
-                </summary>
-                <form action={createThreadAction} className="mt-2 flex gap-2">
+              <div className="mt-1.5">
+                <FormDialog
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className="text-merge hover:text-merge"
+                    />
+                  }
+                  triggerLabel={
+                    <>
+                      <GitBranch /> Crear thread desde esta entry
+                    </>
+                  }
+                  title="Nuevo thread"
+                  description={`Un debate que se ramifica desde la entry de ${e.author_label}. Tendrá estado y disparador propios, independientes del topic.`}
+                  submitLabel="Crear thread"
+                  action={createThreadAction}
+                >
                   <input type="hidden" name="topic_id" value={topic.id} />
                   <input type="hidden" name="origin_entry_id" value={e.id} />
-                  <Input
-                    name="title"
-                    required
-                    placeholder="Título del thread (el debate que se abre acá)…"
-                    className="h-8 text-sm"
-                  />
-                  <Button type="submit" size="sm" variant="outline">
-                    Crear
-                  </Button>
-                </form>
-              </details>
+                  <Field>
+                    <FieldLabel htmlFor={`thread-title-${e.id}`}>
+                      Título del thread
+                    </FieldLabel>
+                    <Input
+                      id={`thread-title-${e.id}`}
+                      name="title"
+                      required
+                      autoFocus
+                      placeholder="El debate que se abre acá…"
+                      className="text-sm"
+                    />
+                  </Field>
+                </FormDialog>
+              </div>
             )}
           />
         </div>
@@ -169,9 +198,12 @@ export default async function TopicPage({
         >
           <input type="hidden" name="topic_id" value={topic.id} />
           <div className="flex items-center gap-2">
-            <label htmlFor="author_label" className="text-xs text-muted-foreground">
+            <Label
+              htmlFor="author_label"
+              className="text-xs text-muted-foreground"
+            >
               Autor
-            </label>
+            </Label>
             <Input
               id="author_label"
               name="author_label"
@@ -189,9 +221,9 @@ export default async function TopicPage({
             className="mt-3 min-h-20 text-sm"
           />
           <div className="mt-3 flex justify-end">
-            <Button type="submit" size="sm">
+            <SubmitButton size="sm">
               <Pencil /> Agregar entry
-            </Button>
+            </SubmitButton>
           </div>
         </form>
 
@@ -200,11 +232,18 @@ export default async function TopicPage({
           Threads
         </h2>
         {topThreads.length === 0 ? (
-          <div className="mt-4 rounded-lg border border-border bg-card px-6 py-8 text-center text-sm text-muted-foreground">
-            Este topic todavía no se ramificó. Cuando un debate no pueda
-            convivir en el main, creá un thread desde su entry{" "}
-            <GitBranch className="inline size-3.5 align-text-bottom text-merge" />.
-          </div>
+          <Empty className="mt-4 border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <GitBranch className="text-merge" />
+              </EmptyMedia>
+              <EmptyTitle>Este topic todavía no se ramificó</EmptyTitle>
+              <EmptyDescription>
+                Cuando un debate no pueda convivir en el main, creá un thread
+                desde su entry.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {topThreads.map((t) => {
@@ -276,23 +315,39 @@ export default async function TopicPage({
         )}
 
         {/* Thread sin entry de origen ("creado por mí") */}
-        <details className="mt-4">
-          <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-merge">
-            <GitBranch className="size-3.5" /> Nuevo thread (sin entry de origen)
-          </summary>
-          <form action={createThreadAction} className="mt-2 flex max-w-md gap-2">
+        <div className="mt-4">
+          <FormDialog
+            trigger={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-merge hover:text-merge"
+              />
+            }
+            triggerLabel={
+              <>
+                <GitBranch /> Nuevo thread (sin entry de origen)
+              </>
+            }
+            title="Nuevo thread"
+            description="Un debate propio del topic, sin entry que lo origine. Tendrá estado y disparador propios."
+            submitLabel="Crear thread"
+            action={createThreadAction}
+          >
             <input type="hidden" name="topic_id" value={topic.id} />
-            <Input
-              name="title"
-              required
-              placeholder="Título del thread…"
-              className="h-8 text-sm"
-            />
-            <Button type="submit" size="sm" variant="outline">
-              Crear
-            </Button>
-          </form>
-        </details>
+            <Field>
+              <FieldLabel htmlFor="new-thread-title">Título del thread</FieldLabel>
+              <Input
+                id="new-thread-title"
+                name="title"
+                required
+                autoFocus
+                placeholder="Título del thread…"
+                className="text-sm"
+              />
+            </Field>
+          </FormDialog>
+        </div>
 
         {/* Decisiones: se registran acá y aparecen en el main con sus fuentes */}
         <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted-foreground">

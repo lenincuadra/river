@@ -1,16 +1,18 @@
 import { isNull } from "drizzle-orm";
-import { Inbox, Waves, Plus, ArrowRight } from "lucide-react";
+import { Inbox, Waves } from "lucide-react";
 import { db } from "@/db";
 import { entries as entriesTable, topics as topicsTable } from "@/db/schema";
-import {
-  assignEntryAction,
-  createTopicFromEntryAction,
-  deleteInboxEntryAction,
-} from "@/app/actions";
 import { Topbar } from "@/components/topbar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { InboxEntryActions } from "@/components/inbox-entry-actions";
 import { Card, CardContent } from "@/components/ui/card";
+import { Kbd } from "@/components/ui/kbd";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +45,18 @@ export default async function InboxPage() {
         </p>
 
         {inboxEntries.length === 0 ? (
-          <div className="mt-10 rounded-lg border border-border bg-card px-6 py-10 text-center">
-            <Waves className="mx-auto size-8 text-river" />
-            <p className="mt-3 text-sm text-muted-foreground">
-              Inbox vacío. Capturá desde cualquier pantalla con{" "}
-              <kbd className="rounded border border-border px-1.5 text-[10px]">⌘K</kbd>{" "}
-              — sin decidir a dónde va.
-            </p>
-          </div>
+          <Empty className="mt-10 border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Waves className="text-river" />
+              </EmptyMedia>
+              <EmptyTitle>Inbox vacío</EmptyTitle>
+              <EmptyDescription>
+                Capturá desde cualquier pantalla con <Kbd>⌘K</Kbd> — sin decidir
+                a dónde va. Después se procesa acá.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="mt-6 flex flex-col gap-4">
             {inboxEntries.map((entry) => (
@@ -63,54 +69,10 @@ export default async function InboxPage() {
                     </span>
                     <p className="mt-1">{entry.body}</p>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                    <form action={assignEntryAction} className="flex items-center gap-2">
-                      <input type="hidden" name="entry_id" value={entry.id} />
-                      <select
-                        name="topic_id"
-                        required
-                        defaultValue=""
-                        className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm"
-                      >
-                        <option value="" disabled>
-                          Elegir topic…
-                        </option>
-                        {allTopics.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.title}
-                          </option>
-                        ))}
-                      </select>
-                      <Button type="submit" size="sm" variant="outline">
-                        <ArrowRight /> Mover
-                      </Button>
-                    </form>
-
-                    <form
-                      action={createTopicFromEntryAction}
-                      className="flex items-center gap-2"
-                    >
-                      <input type="hidden" name="entry_id" value={entry.id} />
-                      <Input
-                        name="title"
-                        required
-                        placeholder="Título del topic nuevo…"
-                        className="h-8 w-48 text-sm"
-                      />
-                      <Button type="submit" size="sm" variant="outline">
-                        <Plus /> Crear topic
-                      </Button>
-                    </form>
-
-                    <div className="flex-1" />
-                    <form action={deleteInboxEntryAction}>
-                      <input type="hidden" name="entry_id" value={entry.id} />
-                      <Button type="submit" size="sm" variant="ghost" className="text-del">
-                        Borrar
-                      </Button>
-                    </form>
-                  </div>
+                  <InboxEntryActions
+                    entryId={entry.id}
+                    topics={allTopics.map((t) => ({ id: t.id, title: t.title }))}
+                  />
                 </CardContent>
               </Card>
             ))}

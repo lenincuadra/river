@@ -10,8 +10,19 @@ import {
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { fmtDate } from "@/components/feed";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export const dynamic = "force-dynamic";
 
@@ -98,16 +109,18 @@ export default async function SearchPage({
         </p>
 
         <form method="get" className="mt-5 flex gap-2">
-          <Input
-            name="q"
-            defaultValue={query}
-            autoFocus
-            placeholder="Buscar por texto o autor (ej: Martina, contraste…)"
-            className="h-9 text-sm"
-          />
-          <Button type="submit" size="sm">
-            Buscar
-          </Button>
+          <InputGroup className="flex-1">
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+            <InputGroupInput
+              name="q"
+              defaultValue={query}
+              autoFocus
+              placeholder="Buscar por texto o autor (ej: Martina, contraste…)"
+            />
+          </InputGroup>
+          <Button type="submit">Buscar</Button>
         </form>
 
         {query && (
@@ -117,10 +130,18 @@ export default async function SearchPage({
         )}
 
         {query && total === 0 && (
-          <div className="mt-6 rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            Nada todavía. Puede que sea la primera vez que aparece: capturá la
-            idea y quedará registrada para la próxima búsqueda.
-          </div>
+          <Empty className="mt-6 border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Search />
+              </EmptyMedia>
+              <EmptyTitle>Nada todavía</EmptyTitle>
+              <EmptyDescription>
+                Puede que sea la primera vez que aparece: capturá la idea y
+                quedará registrada para la próxima búsqueda.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
 
         {topicHits.length > 0 && (

@@ -3,54 +3,40 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { FieldDescription } from "@/components/ui/field";
+
+type Kind = "date" | "condition" | "backlog";
 
 // Los tres tipos de disparador del vocabulario oficial: fecha, condición o
 // backlog (sin disparador, solo revisión manual). Vive dentro de un <form>
 // propio en cada uso (snooze, re-dormir en Reentry): los names "kind",
 // "fire_date" y "condition_text" son los que leen las server actions.
-export function TriggerFields({
-  defaultKind = "date",
-}: {
-  defaultKind?: "date" | "condition" | "backlog";
-}) {
-  const [kind, setKind] = useState(defaultKind);
+export function TriggerFields({ defaultKind = "date" }: { defaultKind?: Kind }) {
+  const [kind, setKind] = useState<Kind>(defaultKind);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex gap-4 text-xs text-muted-foreground">
-        <label className="flex items-center gap-1.5">
-          <input
-            type="radio"
-            name="kind"
-            value="date"
-            checked={kind === "date"}
-            onChange={() => setKind("date")}
-          />
-          Fecha
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="radio"
-            name="kind"
-            value="condition"
-            checked={kind === "condition"}
-            onChange={() => setKind("condition")}
-          />
-          Condición
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="radio"
-            name="kind"
-            value="backlog"
-            checked={kind === "backlog"}
-            onChange={() => setKind("backlog")}
-          />
-          Backlog
-        </label>
-      </div>
+    <div className="flex flex-col gap-3">
+      {/* El valor elegido viaja en este hidden: el RadioGroup es solo la UI. */}
+      <input type="hidden" name="kind" value={kind} />
+      <RadioGroup
+        value={kind}
+        onValueChange={(value) => setKind(value as Kind)}
+        className="flex flex-wrap gap-x-5 gap-y-2"
+      >
+        <Label className="font-normal">
+          <RadioGroupItem value="date" /> Fecha
+        </Label>
+        <Label className="font-normal">
+          <RadioGroupItem value="condition" /> Condición
+        </Label>
+        <Label className="font-normal">
+          <RadioGroupItem value="backlog" /> Backlog
+        </Label>
+      </RadioGroup>
       {kind === "date" && (
-        <Input type="date" name="fire_date" required className="h-8 text-sm" />
+        <Input type="date" name="fire_date" required className="text-sm" />
       )}
       {kind === "condition" && (
         <Textarea
@@ -61,9 +47,9 @@ export function TriggerFields({
         />
       )}
       {kind === "backlog" && (
-        <p className="text-xs text-muted-foreground">
+        <FieldDescription>
           Sin disparador: queda en el radar, a la espera de una revisión manual.
-        </p>
+        </FieldDescription>
       )}
     </div>
   );

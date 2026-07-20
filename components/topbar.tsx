@@ -1,31 +1,76 @@
 import Link from "next/link";
-import { isNull } from "drizzle-orm";
 import { Search, Radar, Inbox } from "lucide-react";
 import { db } from "@/db";
-import { entries, topics } from "@/db/schema";
+import { entries, topics, events } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
-import { isDue } from "@/lib/triggers";
+import { isDue, triggerSummary } from "@/lib/triggers";
+import { fmtRelative } from "@/lib/dates";
+import { fmtDate } from "@/components/feed";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CaptureInput } from "./capture-input";
 import { TopicSwitcher } from "./topic-switcher";
 
 // Topbar del wireframe: logo, captura como input principal, inbox con badge,
 // búsqueda plegada a un botón (Fase 6) y el switcher de topic a la derecha.
-// El radar (⏰) suma la Fase 4: cuenta lo dormido, resaltado si algo venció.
+// El radar suma la Fase 4: cuenta lo dormido, resaltado si algo venció.
 export async function Topbar({
   currentTopic,
 }: {
   currentTopic?: { id: string; title: string };
 }) {
-  const [inboxEntries, allTopics, pendingTriggers] = await Promise.all([
-    db.select({ id: entries.id }).from(entries).where(isNull(entries.topic_id)),
+  const [allEntries, allTopics, allEvents, pendingTriggers] = await Promise.all([
+    db
+      .select({
+        id: entries.id,
+        topic_id: entries.topic_id,
+        created_at: entries.created_at,
+      })
+      .from(entries),
     db.select().from(topics),
+    db
+      .select({ topic_id: events.topic_id, created_at: events.created_at })
+      .from(events),
     allPendingTriggers(),
   ]);
+  const inboxCount = allEntries.filter((e) => e.topic_id === null).length;
   const dueCount = pendingTriggers.filter(isDue).length;
 
+  // Lista enriquecida del switcher (wireframe): cada topic con el preview de
+  // su último movimiento y, si duerme, su disparador visible.
+  const switcherItems = allTopics.map((t) => {
+    const moves = [
+      ...allEntries.filter((e) => e.topic_id === t.id),
+      ...allEvents.filter((e) => e.topic_id === t.id),
+    ].map((m) => m.created_at);
+    const lastMove = moves.sort().at(-1);
+    const trigger = pendingTriggers.find(
+      (tr) => tr.target_type === "topic" && tr.target_id === t.id
+    );
+    const meta = [
+      lastMove ? `últ. mov. ${fmtRelative(lastMove)}` : null,
+      trigger ? triggerSummary(trigger, fmtDate) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    return { id: t.id, title: t.title, state: t.state, meta };
+  });
+
+  const navLink = (extra?: string) =>
+    cn(
+      buttonVariants({ variant: "ghost", size: "sm" }),
+      "text-muted-foreground",
+      extra
+    );
+
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-background px-5 py-3">
+    <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-5 py-3">
       <Link
         href="/"
         className="flex items-center gap-2 text-sm font-extrabold tracking-wider"
@@ -38,28 +83,55 @@ export async function Topbar({
       {/* key: al cambiar de topic se remonta y el chip de destino vuelve a aparecer */}
       <CaptureInput key={currentTopic?.id ?? "none"} topic={currentTopic ?? null} />
       <div className="flex-1" />
-      <Link href="/search" aria-label="Buscar" title="Buscar">
-        <Badge variant="outline" className="text-muted-foreground">
-          <Search /> <span className="max-sm:hidden">Buscar</span>
-        </Badge>
-      </Link>
-      <Link href="/triggers">
-        <Badge
-          variant="outline"
-          className={dueCount > 0 ? "border-src text-src" : "text-muted-foreground"}
+
+      <Tooltip>
+        <TooltipTrigger
+          render={<Link href="/search" className={navLink()} />}
         >
-          <Radar /> Radar · {pendingTriggers.length}
-        </Badge>
-      </Link>
-      <Link href="/inbox">
-        <Badge variant="outline" className="text-muted-foreground">
-          <Inbox /> Inbox · {inboxEntries.length}
-        </Badge>
-      </Link>
-      <TopicSwitcher
-        topics={allTopics}
-        currentTitle={currentTopic?.title}
-      />
+          <Search /> <span className="max-md:hidden">Buscar</span>
+        </TooltipTrigger>
+        <TooltipContent>Buscar en topics, threads y entries</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Link
+              href="/triggers"
+              className={navLink(
+                dueCount > 0 ? "text-src hover:text-src" : undefined
+              )}
+            />
+          }
+        >
+          <Radar /> <span className="max-md:hidden">Radar</span>
+          <Badge
+            variant="secondary"
+            className={cn("px-1.5", dueCount > 0 && "bg-src/15 text-src")}
+          >
+            {pendingTriggers.length}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          {dueCount > 0
+            ? `${dueCount} ${dueCount === 1 ? "disparador vencido" : "disparadores vencidos"} — ¿siguen teniendo sentido?`
+            : "Disparadores pendientes: lo que duerme y espera"}
+        </TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger
+          render={<Link href="/inbox" className={navLink()} />}
+        >
+          <Inbox /> <span className="max-md:hidden">Inbox</span>
+          <Badge variant="secondary" className="px-1.5">
+            {inboxCount}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>Capturas sin destino, para procesar después</TooltipContent>
+      </Tooltip>
+
+      <TopicSwitcher topics={switcherItems} currentId={currentTopic?.id} />
     </header>
   );
 }

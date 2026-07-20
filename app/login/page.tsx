@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { loginAction } from "./actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 
 export const dynamic = "force-dynamic";
@@ -34,9 +34,9 @@ export default async function LoginPage({
         {error && (
           <p className="text-xs text-del">Contraseña incorrecta, probá de nuevo.</p>
         )}
-        <Button type="submit" className="w-full" size="sm">
+        <SubmitButton className="w-full" size="sm">
           Entrar
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );

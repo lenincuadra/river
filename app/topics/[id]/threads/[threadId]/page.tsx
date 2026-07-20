@@ -14,10 +14,22 @@ import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
+import { FormDialog } from "@/components/form-dialog";
+import { SubmitButton } from "@/components/submit-button";
 import { Feed, fmtDate, lastArchivedReason } from "@/components/feed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -62,22 +74,34 @@ export default async function ThreadPage({
       <Topbar currentTopic={{ id: topic.id, title: topic.title }} />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
-        <div className="text-xs text-muted-foreground">
-          <Link href={`/topics/${topic.id}`} className="hover:underline">
-            {topic.title}
-          </Link>
-          {parent && (
-            <>
-              {" / "}
-              <Link
-                href={`/topics/${topic.id}/threads/${parent.id}`}
-                className="inline-flex items-center gap-1 hover:underline"
-              >
-                <GitBranch className="size-3" /> {parent.title}
-              </Link>
-            </>
-          )}
-        </div>
+        <Breadcrumb>
+          <BreadcrumbList className="text-xs">
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link href={`/topics/${topic.id}`} />}>
+                {topic.title}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {parent && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink
+                    render={
+                      <Link href={`/topics/${topic.id}/threads/${parent.id}`} />
+                    }
+                    className="inline-flex items-center gap-1"
+                  >
+                    <GitBranch className="size-3" /> {parent.title}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            )}
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{thread.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
@@ -116,15 +140,21 @@ export default async function ThreadPage({
         >
           <input type="hidden" name="thread_id" value={thread.id} />
           <div className="flex items-center gap-2">
-            <label htmlFor="author_label" className="text-xs text-muted-foreground">
+            <Label
+              htmlFor="author_label"
+              className="text-xs text-muted-foreground"
+            >
               Autor
-            </label>
+            </Label>
             <Input
               id="author_label"
               name="author_label"
               defaultValue="Yo"
               className="h-7 w-32 text-sm"
             />
+            <span className="text-xs text-muted-foreground">
+              (editalo para citar a alguien: &quot;Martina&quot;)
+            </span>
           </div>
           <Textarea
             name="body"
@@ -133,9 +163,9 @@ export default async function ThreadPage({
             className="mt-3 min-h-20 text-sm"
           />
           <div className="mt-3 flex justify-end">
-            <Button type="submit" size="sm">
+            <SubmitButton size="sm">
               <Pencil /> Agregar entry
-            </Button>
+            </SubmitButton>
           </div>
         </form>
 
@@ -170,24 +200,42 @@ export default async function ThreadPage({
                 ))}
               </div>
             )}
-            <details className="mt-3">
-              <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-merge">
-                <Plus className="size-3.5" /> Crear subthread
-              </summary>
-              <form action={createThreadAction} className="mt-2 flex max-w-md gap-2">
+            <div className="mt-3">
+              <FormDialog
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-merge hover:text-merge"
+                  />
+                }
+                triggerLabel={
+                  <>
+                    <Plus /> Crear subthread
+                  </>
+                }
+                title="Nuevo subthread"
+                description="Nivel máximo de profundidad (regla 5): topic → thread → subthread. Acá se separa una postura que ya no convive en el thread."
+                submitLabel="Crear subthread"
+                action={createThreadAction}
+              >
                 <input type="hidden" name="topic_id" value={topic.id} />
                 <input type="hidden" name="parent_thread_id" value={thread.id} />
-                <Input
-                  name="title"
-                  required
-                  placeholder="Título del subthread…"
-                  className="h-8 text-sm"
-                />
-                <Button type="submit" size="sm" variant="outline">
-                  Crear
-                </Button>
-              </form>
-            </details>
+                <Field>
+                  <FieldLabel htmlFor="new-subthread-title">
+                    Título del subthread
+                  </FieldLabel>
+                  <Input
+                    id="new-subthread-title"
+                    name="title"
+                    required
+                    autoFocus
+                    placeholder="Título del subthread…"
+                    className="text-sm"
+                  />
+                </Field>
+              </FormDialog>
+            </div>
           </>
         )}
         {isSubthread && (

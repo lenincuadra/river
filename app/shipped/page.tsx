@@ -5,6 +5,13 @@ import { db } from "@/db";
 import { topics as topicsTable, events as eventsTable } from "@/db/schema";
 import { Topbar } from "@/components/topbar";
 import { fmtDate } from "@/components/feed";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 export const dynamic = "force-dynamic";
 
@@ -51,10 +58,18 @@ export default async function ShippedPage() {
         </p>
 
         {versions.length === 0 ? (
-          <div className="mt-8 rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            Todavía no se shippeó nada. Cuando un topic se concrete, marcá su
-            versión como Shipped y aparecerá acá.
-          </div>
+          <Empty className="mt-8 border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Star />
+              </EmptyMedia>
+              <EmptyTitle>Todavía no se shippeó nada</EmptyTitle>
+              <EmptyDescription>
+                Cuando un topic se concrete, marcá su versión como Shipped y
+                aparecerá acá.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="mt-6 flex flex-col gap-4">
             {versions.map(([version, { items }]) => (

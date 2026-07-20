@@ -1,6 +1,8 @@
 import { Archive, Play, Moon } from "lucide-react";
 import { archiveAction, reactivateAction, snoozeAction } from "@/app/actions";
 import { TriggerFields } from "@/components/trigger-fields";
+import { FormDialog } from "@/components/form-dialog";
+import { SubmitButton } from "@/components/submit-button";
 import { fmtDate } from "@/components/feed";
 import { triggerSummary, type Trigger } from "@/lib/triggers";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,13 @@ export function StateActions({
   archivedReason?: string;
   pendingTrigger?: Trigger;
 }) {
+  const targetInputs = (
+    <>
+      <input type="hidden" name="target_type" value={targetType} />
+      <input type="hidden" name="target_id" value={targetId} />
+    </>
+  );
+
   if (state === "archived") {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-3.5 py-2.5 text-sm">
@@ -28,11 +37,10 @@ export function StateActions({
           <Archive className="size-3.5" /> Archivado{archivedReason && <> · motivo: <b className="text-foreground">{archivedReason}</b></>}
         </span>
         <form action={reactivateAction} className="ml-auto">
-          <input type="hidden" name="target_type" value={targetType} />
-          <input type="hidden" name="target_id" value={targetId} />
-          <Button type="submit" size="sm" variant="outline">
+          {targetInputs}
+          <SubmitButton size="sm" variant="outline">
             <Play /> Reactivar
-          </Button>
+          </SubmitButton>
         </form>
       </div>
     );
@@ -47,60 +55,56 @@ export function StateActions({
             {pendingTrigger && <> · {triggerSummary(pendingTrigger, fmtDate)}</>}
           </span>
           <form action={reactivateAction} className="ml-auto">
-            <input type="hidden" name="target_type" value={targetType} />
-            <input type="hidden" name="target_id" value={targetId} />
-            <Button type="submit" size="sm" variant="outline">
+            {targetInputs}
+            <SubmitButton size="sm" variant="outline">
               <Play /> Reactivar
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       )}
 
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         {state === "active" && (
-          <details className="min-w-0">
-            <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-              <Moon className="size-3.5" /> Snooze…
-            </summary>
-            <form
-              action={snoozeAction}
-              className="mt-2 flex w-full max-w-md flex-col gap-2"
-            >
-              <input type="hidden" name="target_type" value={targetType} />
-              <input type="hidden" name="target_id" value={targetId} />
-              <TriggerFields />
-              <div className="flex justify-end">
-                <Button type="submit" size="sm" variant="outline">
-                  Snooze
-                </Button>
-              </div>
-            </form>
-          </details>
+          <FormDialog
+            trigger={<Button variant="outline" size="sm" />}
+            triggerLabel={
+              <>
+                <Moon /> Snooze…
+              </>
+            }
+            title="Snoozear"
+            description="«Todavía creo en esto, pero no es ahora.» Elegí el disparador que lo va a despertar; va a golpear la puerta solo."
+            submitLabel="Snooze"
+            action={snoozeAction}
+          >
+            {targetInputs}
+            <TriggerFields />
+          </FormDialog>
         )}
 
-        <details className="min-w-0">
-          <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-            <Archive className="size-3.5" /> Archivar…
-          </summary>
-          <form
-            action={archiveAction}
-            className="mt-2 flex w-full max-w-md flex-col gap-2"
-          >
-            <input type="hidden" name="target_type" value={targetType} />
-            <input type="hidden" name="target_id" value={targetId} />
-            <Textarea
-              name="reason"
-              required
-              placeholder="Motivo (obligatorio): dejé de creer en esto porque…"
-              className="min-h-16 text-sm"
-            />
-            <div className="flex justify-end">
-              <Button type="submit" size="sm" variant="outline">
-                Archivar con motivo
-              </Button>
-            </div>
-          </form>
-        </details>
+        <FormDialog
+          trigger={
+            <Button variant="outline" size="sm" className="text-muted-foreground" />
+          }
+          triggerLabel={
+            <>
+              <Archive /> Archivar…
+            </>
+          }
+          title="Archivar con motivo"
+          description="«Dejé de creer en esto, y este es el motivo.» El motivo es obligatorio y queda en el historial. Es reversible: se puede reactivar."
+          submitLabel="Archivar con motivo"
+          action={archiveAction}
+        >
+          {targetInputs}
+          <Textarea
+            name="reason"
+            required
+            autoFocus
+            placeholder="Motivo (obligatorio): dejé de creer en esto porque…"
+            className="min-h-20 text-sm"
+          />
+        </FormDialog>
       </div>
     </div>
   );
