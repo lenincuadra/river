@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import { db } from "./index";
-import { topics, threads, entries, events, triggers } from "./schema";
+import { topics, threads, entries, events, eventSources, triggers } from "./schema";
 
 // Toda mutación pasa por acá: las reglas del sistema se validan en backend,
 // no solo en UI (CLAUDE.md). La tabla `events` solo recibe INSERT.
@@ -350,6 +350,66 @@ export async function shipTopic(input: {
     }),
     created_at: now(),
   });
+}
+
+// Decisión (river-plan.md §4): evento con fuentes citadas. Registra qué se
+// decidió y en qué se apoyó (1..N threads/subthreads/entries del mismo topic).
+// Es la respuesta a "¿cómo llegamos a X?". Vive en el main del topic (thread_id
+// null). Decisión ≠ Shipped: no cambia estado ni implica ejecución.
+export async function createDecision(input: {
+  topicId: string;
+  title: string;
+  text?: string;
+  sources: { type: "thread" | "entry"; id: string }[];
+}) {
+  const title = input.title.trim();
+  if (!title) throw new Error("El título de la decisión es obligatorio.");
+  const [topic] = await db
+    .select()
+    .from(topics)
+    .where(eq(topics.id, input.topicId));
+  if (!topic) throw new Error("El topic no existe.");
+
+  // Fuentes únicas y no vacías (una decisión sin fuentes no responde "¿cómo llegamos?").
+  const uniq = new Map(input.sources.map((s) => [`${s.type}:${s.id}`, s]));
+  const sources = [...uniq.values()];
+  if (sources.length === 0)
+    throw new Error("Una decisión cita al menos una fuente (thread o entry).");
+
+  // Cada fuente debe existir y pertenecer a este topic.
+  for (const s of sources) {
+    if (s.type === "thread") {
+      const [t] = await db.select().from(threads).where(eq(threads.id, s.id));
+      if (!t || t.topic_id !== input.topicId)
+        throw new Error("Una fuente citada no es un thread de este topic.");
+    } else {
+      const [e] = await db.select().from(entries).where(eq(entries.id, s.id));
+      if (!e || e.topic_id !== input.topicId)
+        throw new Error("Una fuente citada no es una entry de este topic.");
+    }
+  }
+
+  const eventId = randomUUID();
+  await db.insert(events).values({
+    id: eventId,
+    topic_id: input.topicId,
+    thread_id: null, // la decisión vive en el main del topic
+    type: "decision",
+    payload: JSON.stringify({
+      title,
+      ...(input.text?.trim() ? { text: input.text.trim() } : {}),
+    }),
+    created_at: now(),
+  });
+  await db.insert(eventSources).values(
+    sources.map((s) => ({
+      id: randomUUID(),
+      event_id: eventId,
+      source_type: s.type,
+      source_id: s.id,
+    }))
+  );
+  return eventId;
 }
 
 // Convergence: une 2+ topics en uno (nuevo o existente). Los orígenes pasan a

@@ -35,7 +35,7 @@ Regla práctica: si el usuario quiere ponerle disparador, no es `archived`, es `
 
 ## Pendientes de diseño
 
-- **Íconos**: reemplazar los glifos unicode/emoji provisorios (✎ ☾ ★ ⑂ ◦ 🧵 📥 🔍 ◆ ✓) por íconos de **Lucide** (`lucide-react`, la librería de íconos de shadcn/ui, ya instalada) en toda la UI: feed, topbar, chips de estado, botones. Hacerlo en una pasada dedicada, manteniendo el mapa semántico (entry=verde, thread/merge=morado, fuentes=rosa).
+- ~~**Íconos**: migrar glifos a Lucide~~ — hecho (commit 538dd07). El mapa tipo de evento → ícono vive en `lib/event-icons.ts`; mantener el mapa semántico (entry=verde, thread/merge=morado, fuentes=rosa). Nuevos íconos: usar `lucide-react`, nunca glifos unicode/emoji.
 - **Monograma 1R definitivo** en SVG (river-plan.md §7): el placeholder actual es texto plano.
 
 ## Cómo trabajar

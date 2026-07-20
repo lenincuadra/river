@@ -16,6 +16,7 @@ import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
 import { ShipAction } from "@/components/ship-action";
+import { DecisionForm } from "@/components/decision-form";
 import { Feed, fmtDate, lastArchivedReason } from "@/components/feed";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,7 @@ export default async function TopicPage({
     const label =
       s.source_type === "thread"
         ? (allThreads.find((t) => t.id === s.source_id)?.title ?? "¿?")
-        : "entry";
+        : `entry de ${allEntries.find((e) => e.id === s.source_id)?.author_label ?? "?"}`;
     (sourceLabels[s.event_id] ??= []).push(label);
   }
 
@@ -80,6 +81,20 @@ export default async function TopicPage({
     originEntryId
       ? allEntries.find((e) => e.id === originEntryId)?.author_label
       : undefined;
+
+  // Fuentes citables por una decisión: threads (con sus subthreads debajo) y
+  // entries del main. Cualquier combinación de 1..N (river-plan.md §4).
+  const citableThreads = topThreads.flatMap((t) => [
+    { id: t.id, title: t.title, sub: false },
+    ...subsOf(t.id).map((s) => ({ id: s.id, title: s.title, sub: true })),
+  ]);
+  const citableEntries = mainEntries
+    .slice()
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((e) => ({
+      id: e.id,
+      label: `${e.author_label}: ${e.body.length > 60 ? e.body.slice(0, 60) + "…" : e.body}`,
+    }));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -278,6 +293,20 @@ export default async function TopicPage({
             </Button>
           </form>
         </details>
+
+        {/* Decisiones: se registran acá y aparecen en el main con sus fuentes */}
+        <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Decisiones
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          La decisión es el pensamiento (qué se resolvió y con qué fundamentos),
+          no la ejecución. Queda en el main y linkea sus fuentes.
+        </p>
+        <DecisionForm
+          topicId={topic.id}
+          threads={citableThreads}
+          entries={citableEntries}
+        />
       </main>
     </div>
   );

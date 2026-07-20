@@ -15,6 +15,7 @@ import {
   resolveTrigger,
   shipTopic,
   convergeTopics,
+  createDecision,
   type TriggerInput,
 } from "@/db/mutations";
 
@@ -155,6 +156,32 @@ export async function shipAction(formData: FormData) {
   const version = String(formData.get("version") ?? "").trim();
   if (!version) return; // la UI ya lo exige; el backend valida igual
   await shipTopic({ topicId: String(formData.get("topic_id")), version });
+  refresh();
+}
+
+// Decisión: crea el evento con sus fuentes. Las fuentes vienen como checkboxes
+// name="source" con valor "thread:<id>" o "entry:<id>".
+export async function createDecisionAction(formData: FormData) {
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) return;
+  const sources = formData
+    .getAll("source")
+    .map(String)
+    .map((v) => {
+      const [type, id] = v.split(":");
+      return { type: type === "entry" ? "entry" : "thread", id } as {
+        type: "thread" | "entry";
+        id: string;
+      };
+    })
+    .filter((s) => s.id);
+  if (sources.length === 0) return; // la UI ya exige al menos una fuente
+  await createDecision({
+    topicId: String(formData.get("topic_id")),
+    title,
+    text: String(formData.get("text") ?? ""),
+    sources,
+  });
   refresh();
 }
 

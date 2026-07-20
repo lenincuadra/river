@@ -1,6 +1,6 @@
 import { isNull, eq } from "drizzle-orm";
 import { db } from "../db";
-import { entries, topics, threads, events, triggers } from "../db/schema";
+import { entries, topics, threads, events, eventSources, triggers } from "../db/schema";
 import {
   captureEntry,
   assignEntryToTopic,
@@ -14,6 +14,7 @@ import {
   pendingTriggerFor,
   shipTopic,
   convergeTopics,
+  createDecision,
 } from "../db/mutations";
 
 // Smoke test de los flujos de Fases 1 a 4 contra la DB real.
@@ -363,6 +364,51 @@ async function main() {
     console.log("27) FALLO: dejó que el destino sea también un origen");
   } catch (err) {
     console.log("27) destino = origen bloqueado OK:", (err as Error).message);
+  }
+
+  // --- Decisión: evento con fuentes citadas (1..N threads/entries) ---
+  const decId = await createDecision({
+    topicId: darkMode.id,
+    title: "Decisión de prueba",
+    text: "con fundamentos",
+    sources: [
+      { type: "thread", id: th1 },
+      { type: "entry", id: eMartina },
+    ],
+  });
+  const [decEv] = await db.select().from(events).where(eq(events.id, decId));
+  const decSources = await db
+    .select()
+    .from(eventSources)
+    .where(eq(eventSources.event_id, decId));
+  console.log(
+    "28) decisión creada (evento en el main + 2 fuentes):",
+    decEv?.type === "decision" &&
+      decEv.thread_id === null &&
+      JSON.parse(decEv.payload).title === "Decisión de prueba" &&
+      decSources.length === 2
+      ? "OK"
+      : "FALLO"
+  );
+
+  // Sin fuentes debe rechazarse (no responde "¿cómo llegamos?")
+  try {
+    await createDecision({ topicId: darkMode.id, title: "sin fuentes", sources: [] });
+    console.log("29) FALLO: dejó crear una decisión sin fuentes");
+  } catch (err) {
+    console.log("29) decisión sin fuentes bloqueada OK:", (err as Error).message);
+  }
+
+  // Una fuente que no pertenece al topic debe rechazarse (cvA es otro topic)
+  try {
+    await createDecision({
+      topicId: darkMode.id,
+      title: "fuente ajena",
+      sources: [{ type: "thread", id: cvA }],
+    });
+    console.log("30) FALLO: dejó citar una fuente de otro topic");
+  } catch (err) {
+    console.log("30) fuente ajena bloqueada OK:", (err as Error).message);
   }
 }
 
