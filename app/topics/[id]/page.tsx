@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
-import { Star, Waypoints, GitBranch, Pencil, Check } from "lucide-react";
+import { Star, Waypoints, GitBranch, Plus } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -10,22 +10,14 @@ import {
   events as eventsTable,
   eventSources as eventSourcesTable,
 } from "@/db/schema";
-import { addEntryAction, createThreadAction } from "@/app/actions";
 import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
-import { ShipAction } from "@/components/ship-action";
-import { DecisionForm } from "@/components/decision-form";
-import { FormDialog } from "@/components/form-dialog";
-import { SubmitButton } from "@/components/submit-button";
+import { MainComposer } from "@/components/main-composer";
 import { Feed, FeedActionRow, fmtDate, lastArchivedReason } from "@/components/feed";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Empty,
   EmptyDescription,
@@ -147,8 +139,8 @@ export default async function TopicPage({
           state={topic.state}
           archivedReason={lastArchivedReason(mainEvents)}
           pendingTrigger={topicTrigger}
+          canShip
         />
-        <ShipAction topicId={topic.id} />
 
         <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Main
@@ -158,109 +150,20 @@ export default async function TopicPage({
             entries={mainEntries}
             events={mainEvents}
             sourceLinks={sourceLinks}
-            entryFooter={(e) => (
-              <FormDialog
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    className="text-merge hover:text-merge"
-                  />
-                }
-                triggerLabel={
-                  <>
-                    <GitBranch /> Crear thread
-                  </>
-                }
-                title="Nuevo thread"
-                description={`Un debate que se ramifica desde la entry de ${e.author_label}. Tendrá estado y disparador propios, independientes del topic.`}
-                submitLabel="Crear thread"
-                action={createThreadAction}
-              >
-                <input type="hidden" name="topic_id" value={topic.id} />
-                <input type="hidden" name="origin_entry_id" value={e.id} />
-                <Field>
-                  <FieldLabel htmlFor={`thread-title-${e.id}`}>
-                    Título del thread
-                  </FieldLabel>
-                  <Input
-                    id={`thread-title-${e.id}`}
-                    name="title"
-                    required
-                    autoFocus
-                    placeholder="El debate que se abre acá…"
-                    className="text-sm"
-                  />
-                </Field>
-              </FormDialog>
-            )}
+            mainTopicId={topic.id}
             tail={
-              <>
-                {/* Agregar entry: sigue en el timeline, la línea llega hasta acá */}
-                <FeedActionRow
-                  icon={<Pencil className="size-4" />}
-                  iconClassName="border-add/50 bg-add/10 text-add"
-                >
-                  <form
-                    action={addEntryAction}
-                    className="rounded-lg border border-dashed border-border bg-card/50 p-4"
-                  >
-                    <input type="hidden" name="topic_id" value={topic.id} />
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="author_label"
-                        className="text-xs text-muted-foreground"
-                      >
-                        Autor
-                      </Label>
-                      <Input
-                        id="author_label"
-                        name="author_label"
-                        defaultValue="Yo"
-                        className="h-7 w-32 text-sm"
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        (editalo para citar a alguien: &quot;Martina&quot;)
-                      </span>
-                    </div>
-                    <Textarea
-                      name="body"
-                      required
-                      placeholder="Escribir una entry en el main…"
-                      className="mt-3 min-h-20 text-sm"
-                    />
-                    <div className="mt-3 flex justify-end">
-                      <SubmitButton size="sm">
-                        <Pencil /> Agregar entry
-                      </SubmitButton>
-                    </div>
-                  </form>
-                </FeedActionRow>
-
-                {/* Registrar decisión: el próximo nodo posible de la historia */}
-                <FeedActionRow
-                  icon={<Check className="size-4" />}
-                  iconClassName="border-foreground/40 bg-card text-foreground"
-                >
-                  <div className="rounded-lg border border-dashed border-border bg-card/50 p-4">
-                    <div className="text-sm font-semibold">
-                      ¿Se resolvió algo?
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      La decisión es el pensamiento (qué se resolvió y con qué
-                      fundamentos), no la ejecución. Queda acá en el main y
-                      linkea sus fuentes.
-                    </p>
-                    <div className="mt-3">
-                      <DecisionForm
-                        topicId={topic.id}
-                        threads={citableThreads}
-                        entries={citableEntries}
-                      />
-                    </div>
-                  </div>
-                </FeedActionRow>
-              </>
+              // Un solo empty state al final del timeline: lo próximo es UNA
+              // cosa — entry, decisión o thread (UI.md).
+              <FeedActionRow
+                icon={<Plus className="size-4" />}
+                iconClassName="border-border bg-muted text-muted-foreground"
+              >
+                <MainComposer
+                  topicId={topic.id}
+                  threads={citableThreads}
+                  entries={citableEntries}
+                />
+              </FeedActionRow>
             }
           />
         </div>
@@ -278,12 +181,14 @@ export default async function TopicPage({
               <EmptyTitle>Este topic todavía no se ramificó</EmptyTitle>
               <EmptyDescription>
                 Cuando un debate no pueda convivir en el main, creá un thread
-                desde su entry.
+                desde su entry o desde el compositor del timeline.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (
-          <div className="mt-4 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3">
+          // Mobile: carrusel al borde del viewport (el -mx-5 anula el padding
+          // del main y el px-5 interno alinea la primera card).
+          <div className="mt-4 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 max-sm:-mx-5 max-sm:scroll-px-5 max-sm:px-5 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3">
             {topThreads.map((t) => {
               const author = originAuthor(t.origin_entry_id);
               const subs = subsOf(t.id);
@@ -354,41 +259,6 @@ export default async function TopicPage({
             })}
           </div>
         )}
-
-        {/* Thread sin entry de origen ("creado por mí") */}
-        <div className="mt-4">
-          <FormDialog
-            trigger={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-merge hover:text-merge"
-              />
-            }
-            triggerLabel={
-              <>
-                <GitBranch /> Nuevo thread (sin entry de origen)
-              </>
-            }
-            title="Nuevo thread"
-            description="Un debate propio del topic, sin entry que lo origine. Tendrá estado y disparador propios."
-            submitLabel="Crear thread"
-            action={createThreadAction}
-          >
-            <input type="hidden" name="topic_id" value={topic.id} />
-            <Field>
-              <FieldLabel htmlFor="new-thread-title">Título del thread</FieldLabel>
-              <Input
-                id="new-thread-title"
-                name="title"
-                required
-                autoFocus
-                placeholder="Título del thread…"
-                className="text-sm"
-              />
-            </Field>
-          </FormDialog>
-        </div>
 
       </main>
     </div>

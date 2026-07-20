@@ -97,7 +97,7 @@ export function ReentryItem({
         <p className="mt-2 text-sm text-muted-foreground">
           ¿Esto sigue teniendo sentido hoy?
         </p>
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-3">
           <ResolveControls trigger={trigger} />
         </div>
       </CardContent>

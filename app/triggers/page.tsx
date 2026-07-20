@@ -123,7 +123,7 @@ function TriggerRow({
         <p className="mt-1.5 text-sm text-muted-foreground">
           {triggerSummary(trigger, fmtDate)}
         </p>
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-3">
           <ResolveControls trigger={trigger} />
         </div>
       </CardContent>

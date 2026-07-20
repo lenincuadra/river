@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Diamond, Merge } from "lucide-react";
 import { EVENT_ICON, ENTRY_ICON } from "@/lib/event-icons";
-import { EditEntryDialog } from "@/components/edit-entry";
+import { EntryActions } from "@/components/entry-actions";
 import type { entries as entriesTable, events as eventsTable } from "@/db/schema";
 
 type Entry = typeof entriesTable.$inferSelect;
@@ -86,21 +86,25 @@ export function Feed({
   entries,
   events,
   sourceLinks = {},
-  entryFooter,
+  mainTopicId,
   tail,
 }: {
   entries: Entry[];
   events: Event[];
   // fuentes citadas por cada evento decision (event_id → label + destino)
   sourceLinks?: Record<string, { label: string; href: string }[]>;
-  // acción opcional dentro de la card de cada entry (ej: "Crear thread")
-  entryFooter?: (entry: Entry) => ReactNode;
+  // presente cuando el feed es el main de un topic: habilita "Crear thread"
+  // desde cada entry
+  mainTopicId?: string;
   // filas finales del timeline (FeedActionRow): la línea sigue hasta ellas
   tail?: ReactNode;
 }) {
   const items = [
     ...entries.map((e) => ({ kind: "entry" as const, date: e.created_at, entry: e })),
-    ...events.map((e) => ({ kind: "event" as const, date: e.created_at, event: e })),
+    // "Creado" no se muestra: el "desde {fecha}" del encabezado ya lo dice.
+    ...events
+      .filter((e) => e.type !== "created")
+      .map((e) => ({ kind: "event" as const, date: e.created_at, event: e })),
   ].sort((a, b) => a.date.localeCompare(b.date));
 
   return (
@@ -110,32 +114,33 @@ export function Feed({
         {items.map((item) => {
           if (item.kind === "entry") {
             const e = item.entry;
+            // Afuera del card queda solo el ícono (qué es); autor, fecha y
+            // acciones viven adentro, sin líneas divisorias (UI.md).
             return (
               <div key={`en-${e.id}`} className="flex gap-3">
                 <span className="z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border border-add bg-add/15 text-add">
                   <ENTRY_ICON className="size-4" />
                 </span>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="text-sm">
-                    <b>{e.author_label}</b> escribió
-                    {e.edited_at && (
-                      <span className="text-xs text-muted-foreground"> · editado</span>
-                    )}
-                    <span className="float-right text-xs text-muted-foreground">
-                      {fmtDate(e.created_at)}
-                    </span>
-                  </div>
+                <div className="min-w-0 flex-1">
                   <div
                     id={`entry-${e.id}`}
-                    className="mt-1.5 scroll-mt-24 rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm"
+                    className="scroll-mt-24 rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm"
                   >
-                    {e.body}
-                    <div className="mt-2.5 flex flex-wrap items-center gap-1 border-t border-border pt-1.5">
-                      {entryFooter?.(e)}
-                      <span className="ml-auto">
-                        <EditEntryDialog entry={{ id: e.id, body: e.body }} />
+                    <div>
+                      <b>{e.author_label}</b> escribió
+                      {e.edited_at && (
+                        <span className="text-xs text-muted-foreground"> · editado</span>
+                      )}
+                      <span className="float-right text-xs text-muted-foreground">
+                        {fmtDate(e.created_at)}
                       </span>
                     </div>
+                    <p className="mt-1.5">{e.body}</p>
+                    <EntryActions
+                      entry={{ id: e.id, body: e.body }}
+                      authorLabel={e.author_label}
+                      topicId={mainTopicId}
+                    />
                   </div>
                 </div>
               </div>
@@ -147,25 +152,28 @@ export function Feed({
           const meta = EVENT_META[ev.type];
           const Icon = EVENT_ICON[ev.type];
           const links = sourceLinks[ev.id] ?? [];
-          return (
-            <div key={`ev-${ev.id}`} className="flex gap-3">
-              <span
-                className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${meta.className}`}
-              >
-                <Icon className="size-4" />
-              </span>
-              <div className="min-w-0 flex-1 pt-0.5">
-                <div className="text-sm">
-                  <b>{meta.label(p)}</b>
-                  <span className="float-right text-xs text-muted-foreground">
-                    {fmtDate(ev.created_at)}
-                  </span>
-                </div>
-                {ev.type === "decision" && (
-                  <div className="mt-1.5 rounded-lg border-2 border-foreground/70 bg-card px-3.5 py-2.5">
-                    <div className="text-sm font-bold">{p.title}</div>
+
+          // La decisión es el único evento con card propia: como en las
+          // entries, etiqueta y fecha van adentro; afuera solo el ícono.
+          if (ev.type === "decision") {
+            return (
+              <div key={`ev-${ev.id}`} className="flex gap-3">
+                <span
+                  className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${meta.className}`}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="rounded-lg border-2 border-foreground/70 bg-card px-3.5 py-2.5 text-sm">
+                    <div>
+                      <b>Decisión</b>
+                      <span className="float-right text-xs text-muted-foreground">
+                        {fmtDate(ev.created_at)}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 font-bold">{p.title}</div>
                     {p.text && (
-                      <div className="mt-1 text-sm text-muted-foreground">{p.text}</div>
+                      <div className="mt-1 text-muted-foreground">{p.text}</div>
                     )}
                     {links.length > 0 && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
@@ -182,7 +190,25 @@ export function Feed({
                       </div>
                     )}
                   </div>
-                )}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={`ev-${ev.id}`} className="flex gap-3">
+              <span
+                className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${meta.className}`}
+              >
+                <Icon className="size-4" />
+              </span>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <div className="text-sm">
+                  <b>{meta.label(p)}</b>
+                  <span className="float-right text-xs text-muted-foreground">
+                    {fmtDate(ev.created_at)}
+                  </span>
+                </div>
                 {/* Link de ida: desde el origen archivado hacia el destino. */}
                 {ev.type === "converged_into" && p.into_topic_id && (
                   <div className="mt-1.5 text-sm">

@@ -42,7 +42,7 @@ export function InboxEntryActions({
   const [topicId, setTopicId] = useState("");
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+    <div className="flex flex-wrap items-center gap-2">
       <form action={assignEntryAction} className="flex items-center gap-2">
         <input type="hidden" name="entry_id" value={entryId} />
         <input type="hidden" name="topic_id" value={topicId} />
