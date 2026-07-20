@@ -152,6 +152,74 @@ export async function createTopicFromEntry(entryId: string, title: string) {
   return topicId;
 }
 
+// --- Estados (Fase 3). Estado ≠ historial: el estado es un campo mutable,
+// y cada cambio genera su evento inmutable (regla 4). ---
+
+type TargetType = "topic" | "thread";
+
+async function getTarget(targetType: TargetType, id: string) {
+  if (targetType === "topic") {
+    const [topic] = await db.select().from(topics).where(eq(topics.id, id));
+    if (!topic) throw new Error("El topic no existe.");
+    return { state: topic.state, topicId: topic.id, threadId: null };
+  }
+  const [thread] = await db.select().from(threads).where(eq(threads.id, id));
+  if (!thread) throw new Error("El thread no existe.");
+  return { state: thread.state, topicId: thread.topic_id, threadId: thread.id };
+}
+
+async function setState(
+  targetType: TargetType,
+  id: string,
+  state: "active" | "snoozed" | "archived"
+) {
+  if (targetType === "topic") {
+    await db.update(topics).set({ state }).where(eq(topics.id, id));
+  } else {
+    await db.update(threads).set({ state }).where(eq(threads.id, id));
+  }
+}
+
+// Regla 3: nada se archiva sin motivo. Vale para topics y threads.
+export async function archiveTarget(input: {
+  targetType: TargetType;
+  id: string;
+  reason: string;
+}) {
+  const reason = input.reason.trim();
+  if (!reason)
+    throw new Error("Archivar sin motivo es imposible (regla 3).");
+  const target = await getTarget(input.targetType, input.id);
+  if (target.state === "archived") throw new Error("Ya está archivado.");
+  await setState(input.targetType, input.id, "archived");
+  await db.insert(events).values({
+    id: randomUUID(),
+    topic_id: target.topicId,
+    thread_id: target.threadId,
+    type: "archived",
+    payload: JSON.stringify({ reason }),
+    created_at: now(),
+  });
+}
+
+// Archived es reversible manualmente; snoozed también se puede reactivar.
+export async function reactivateTarget(input: {
+  targetType: TargetType;
+  id: string;
+}) {
+  const target = await getTarget(input.targetType, input.id);
+  if (target.state === "active") throw new Error("Ya está activo.");
+  await setState(input.targetType, input.id, "active");
+  await db.insert(events).values({
+    id: randomUUID(),
+    topic_id: target.topicId,
+    thread_id: target.threadId,
+    type: "reactivated",
+    payload: JSON.stringify({ from: target.state }),
+    created_at: now(),
+  });
+}
+
 // Regla 2: borrar solo mientras la entry está en el inbox,
 // es decir antes de formar parte de la historia de un topic.
 export async function deleteInboxEntry(entryId: string) {

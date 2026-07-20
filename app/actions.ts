@@ -9,6 +9,8 @@ import {
   createThread,
   assignEntryToTopic,
   deleteInboxEntry,
+  archiveTarget,
+  reactivateTarget,
 } from "@/db/mutations";
 
 const refresh = () => revalidatePath("/", "layout");
@@ -91,5 +93,24 @@ export async function createTopicFromEntryAction(formData: FormData) {
 
 export async function deleteInboxEntryAction(formData: FormData) {
   await deleteInboxEntry(String(formData.get("entry_id")));
+  refresh();
+}
+
+export async function archiveAction(formData: FormData) {
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) return; // la UI ya lo exige; el backend valida igual
+  await archiveTarget({
+    targetType: formData.get("target_type") === "thread" ? "thread" : "topic",
+    id: String(formData.get("target_id")),
+    reason,
+  });
+  refresh();
+}
+
+export async function reactivateAction(formData: FormData) {
+  await reactivateTarget({
+    targetType: formData.get("target_type") === "thread" ? "thread" : "topic",
+    id: String(formData.get("target_id")),
+  });
   refresh();
 }

@@ -35,7 +35,14 @@ export default async function Home() {
     db.select().from(eventsTable),
   ]);
 
-  const rows = topics.map((topic) => {
+  const STATE_ORDER = { active: 0, snoozed: 1, archived: 2 } as const;
+  const rows = topics
+    .sort(
+      (a, b) =>
+        STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
+        b.created_at.localeCompare(a.created_at)
+    )
+    .map((topic) => {
     const topicEvents = events.filter((e) => e.topic_id === topic.id);
     const shipped = topicEvents.find((e) => e.type === "shipped");
     const shippedVersion = shipped
@@ -50,7 +57,7 @@ export default async function Home() {
       decisionCount: topicEvents.filter((e) => e.type === "decision").length,
       shippedVersion,
     };
-  });
+    });
 
   return (
     <div className="flex flex-1 flex-col">

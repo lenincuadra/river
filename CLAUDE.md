@@ -33,6 +33,11 @@ Regla práctica: si el usuario quiere ponerle disparador, no es `archived`, es `
 - Textos de UI en español; código en inglés.
 - Scripts: `npm run db:reset` (recrea la DB y la puebla con el caso de ejemplo dark-mode/Martina).
 
+## Pendientes de diseño
+
+- **Íconos**: reemplazar los glifos unicode/emoji provisorios (✎ ☾ ★ ⑂ ◦ 🧵 📥 🔍 ◆ ✓) por íconos de **Lucide** (`lucide-react`, la librería de íconos de shadcn/ui, ya instalada) en toda la UI: feed, topbar, chips de estado, botones. Hacerlo en una pasada dedicada, manteniendo el mapa semántico (entry=verde, thread/merge=morado, fuentes=rosa).
+- **Monograma 1R definitivo** en SVG (river-plan.md §7): el placeholder actual es texto plano.
+
 ## Cómo trabajar
 
 - **Una fase por sesión** (fases en `river-plan.md` §6). No avanzar a la siguiente sin cumplir el criterio de listo. Al final de cada fase: commit con mensaje descriptivo y mostrar el log.

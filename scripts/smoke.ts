@@ -7,9 +7,11 @@ import {
   createTopicFromEntry,
   createThread,
   deleteInboxEntry,
+  archiveTarget,
+  reactivateTarget,
 } from "../db/mutations";
 
-// Smoke test de los flujos de Fases 1 y 2 contra la DB real.
+// Smoke test de los flujos de Fases 1, 2 y 3 contra la DB real.
 // Deja datos de prueba: correr `npm run db:reset` después para limpiar.
 
 async function main() {
@@ -124,6 +126,65 @@ async function main() {
   console.log(
     "11) evento created del thread:",
     thEvents.some((e) => e.type === "created") ? "OK" : "FALLO"
+  );
+
+  // --- Fase 3: estados y eventos ---
+
+  // Regla 3: archivar sin motivo es imposible
+  try {
+    await archiveTarget({ targetType: "thread", id: th2, reason: "   " });
+    console.log("12) FALLO: dejó archivar sin motivo");
+  } catch (err) {
+    console.log("12) archivar sin motivo bloqueado OK:", (err as Error).message);
+  }
+
+  // Archivar con motivo: cambia el estado Y estampa el evento (regla 4)
+  await archiveTarget({
+    targetType: "thread",
+    id: th2,
+    reason: "convergerá con la búsqueda general",
+  });
+  const [archivedTh] = await db.select().from(threads).where(eq(threads.id, th2));
+  const archEvents = await db.select().from(events).where(eq(events.thread_id, th2));
+  const archEvent = archEvents.find((e) => e.type === "archived");
+  console.log(
+    "13) thread archivado:",
+    archivedTh.state === "archived" ? "OK" : "FALLO",
+    "| evento con motivo:",
+    archEvent && JSON.parse(archEvent.payload).reason ? "OK" : "FALLO"
+  );
+
+  // Reactivar: vuelve a active y deja su evento
+  await reactivateTarget({ targetType: "thread", id: th2 });
+  const [reTh] = await db.select().from(threads).where(eq(threads.id, th2));
+  const reEvents = await db.select().from(events).where(eq(events.thread_id, th2));
+  console.log(
+    "14) thread reactivado:",
+    reTh.state === "active" ? "OK" : "FALLO",
+    "| evento reactivated:",
+    reEvents.some((e) => e.type === "reactivated") ? "OK" : "FALLO"
+  );
+
+  // Lo mismo a nivel topic (con el topic de prueba de la Fase 1)
+  const [testTopic] = await db
+    .select()
+    .from(topics)
+    .where(eq(topics.title, "topic-de-prueba"));
+  await archiveTarget({
+    targetType: "topic",
+    id: testTopic.id,
+    reason: "era solo una prueba",
+  });
+  const [archTopic] = await db.select().from(topics).where(eq(topics.id, testTopic.id));
+  const topicEvents = await db.select().from(events).where(eq(events.topic_id, testTopic.id));
+  console.log(
+    "15) topic archivado con motivo:",
+    archTopic.state === "archived" &&
+      topicEvents.some(
+        (e) => e.type === "archived" && !e.thread_id && JSON.parse(e.payload).reason
+      )
+      ? "OK"
+      : "FALLO"
   );
 }
 

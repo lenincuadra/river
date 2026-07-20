@@ -11,7 +11,8 @@ import {
 import { addThreadEntryAction, createThreadAction } from "@/app/actions";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
-import { Feed, fmtDate } from "@/components/feed";
+import { StateActions } from "@/components/state-actions";
+import { Feed, fmtDate, lastArchivedReason } from "@/components/feed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -93,6 +94,12 @@ export default async function ThreadPage({
             <p className="mt-1 text-muted-foreground">“{originEntry.body}”</p>
           </div>
         )}
+        <StateActions
+          targetType="thread"
+          targetId={thread.id}
+          state={thread.state}
+          archivedReason={lastArchivedReason(threadEvents)}
+        />
 
         <div className="mt-6">
           <Feed entries={threadEntries} events={threadEvents} />

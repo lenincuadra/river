@@ -11,6 +11,17 @@ type EventPayload = {
   reason?: string;
 };
 
+// El motivo del último archivado sale del historial, no de un campo:
+// estado ≠ historial (regla 4), el motivo vive en su evento.
+export function lastArchivedReason(eventRows: Event[]) {
+  const archived = eventRows
+    .filter((e) => e.type === "archived")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  return archived
+    ? (JSON.parse(archived.payload) as { reason?: string }).reason
+    : undefined;
+}
+
 export function fmtDate(iso: string) {
   return new Intl.DateTimeFormat("es", {
     day: "numeric",
