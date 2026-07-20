@@ -469,7 +469,101 @@ async function seed() {
     },
   ]);
 
-  console.log("Seed listo: topic dark-mode con 3 threads, 4 subthreads, 1 decisión y 2 entries en el inbox.");
+  // --- Demo de Convergence (Fase 5) ---
+  // Dos topics que resultaron ser el mismo tema convergieron en uno. Los
+  // orígenes quedan archived con motivo autocompletado y hay link de ida y
+  // vuelta: desde cada origen se llega al destino, y desde el destino a ellos.
+  const cvDestId = id(); // destino: "flujo de alta"
+  const cvOnboardingId = id();
+  const cvTourId = id();
+
+  await db.insert(topics).values([
+    {
+      id: cvDestId,
+      title: "flujo de alta",
+      description:
+        "Destino de la convergencia: el onboarding en pasos y el tour interactivo eran el mismo problema.",
+      state: "active",
+      created_at: at("2026-07-19T10:00"),
+    },
+    {
+      id: cvOnboardingId,
+      title: "onboarding en 3 pasos",
+      description: "Guiar al usuario nuevo con tres pasos secuenciales.",
+      state: "archived",
+      created_at: at("2026-06-01T09:00"),
+    },
+    {
+      id: cvTourId,
+      title: "tour interactivo",
+      description: "Un recorrido con tooltips por la interfaz.",
+      state: "archived",
+      created_at: at("2026-06-10T09:00"),
+    },
+  ]);
+
+  await db.insert(entries).values([
+    {
+      id: id(),
+      topic_id: cvOnboardingId,
+      author_label: "Yo",
+      body: "Tres pantallas: crear cuenta, elegir objetivo, primer registro.",
+      created_at: at("2026-06-01T09:10"),
+    },
+    {
+      id: id(),
+      topic_id: cvTourId,
+      author_label: "Yo",
+      body: "Tooltips que resaltan cada zona la primera vez que entrás.",
+      created_at: at("2026-06-10T09:10"),
+    },
+    {
+      id: id(),
+      topic_id: cvDestId,
+      author_label: "Yo",
+      body: "Los dos apuntaban a lo mismo: que el primer uso no sea un muro. Los unimos acá.",
+      created_at: at("2026-07-19T10:05"),
+    },
+  ]);
+
+  const cvReason = 'Convergió en "flujo de alta"';
+  await db.insert(events).values([
+    { id: id(), topic_id: cvOnboardingId, type: "created", payload: JSON.stringify({}), created_at: at("2026-06-01T09:00") },
+    { id: id(), topic_id: cvTourId, type: "created", payload: JSON.stringify({}), created_at: at("2026-06-10T09:00") },
+    { id: id(), topic_id: cvDestId, type: "created", payload: JSON.stringify({}), created_at: at("2026-07-19T10:00") },
+    // El destino recibe la convergencia (link de vuelta a los orígenes).
+    {
+      id: id(),
+      topic_id: cvDestId,
+      type: "converged_from",
+      payload: JSON.stringify({
+        from: [
+          { topic_id: cvOnboardingId, title: "onboarding en 3 pasos" },
+          { topic_id: cvTourId, title: "tour interactivo" },
+        ],
+      }),
+      created_at: at("2026-07-19T10:02"),
+    },
+    // Cada origen apunta al destino (link de ida), archivado con motivo.
+    {
+      id: id(),
+      topic_id: cvOnboardingId,
+      type: "converged_into",
+      payload: JSON.stringify({ reason: cvReason, into_topic_id: cvDestId, into_title: "flujo de alta" }),
+      created_at: at("2026-07-19T10:02"),
+    },
+    {
+      id: id(),
+      topic_id: cvTourId,
+      type: "converged_into",
+      payload: JSON.stringify({ reason: cvReason, into_topic_id: cvDestId, into_title: "flujo de alta" }),
+      created_at: at("2026-07-19T10:02"),
+    },
+  ]);
+
+  console.log(
+    "Seed listo: topic dark-mode (3 threads, 4 subthreads, 1 decisión, shipped v2.0), 2 entries en el inbox y una convergencia de ejemplo (onboarding + tour → flujo de alta)."
+  );
 }
 
 seed().catch((err) => {

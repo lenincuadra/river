@@ -12,6 +12,8 @@ import {
   snoozeTarget,
   resolveTrigger,
   pendingTriggerFor,
+  shipTopic,
+  convergeTopics,
 } from "../db/mutations";
 
 // Smoke test de los flujos de Fases 1 a 4 contra la DB real.
@@ -268,6 +270,99 @@ async function main() {
     console.log("21) FALLO: dejó resolver un trigger ya resuelto");
   } catch (err) {
     console.log("21) trigger ya resuelto bloqueado OK:", (err as Error).message);
+  }
+
+  // --- Fase 5: Shipped y Convergence ---
+
+  // Shipped: estampa la versión del producto SIN cambiar el estado (regla 6)
+  await shipTopic({ topicId: darkMode.id, version: "v9.9-test" });
+  const [dmAfterShip] = await db.select().from(topics).where(eq(topics.id, darkMode.id));
+  const dmEvents = await db.select().from(events).where(eq(events.topic_id, darkMode.id));
+  const shipEv = dmEvents.find(
+    (e) => e.type === "shipped" && JSON.parse(e.payload).version === "v9.9-test"
+  );
+  console.log(
+    "22) shipped estampa versión sin cambiar estado:",
+    shipEv && dmAfterShip.state === darkMode.state ? "OK" : "FALLO"
+  );
+
+  // Convergence hacia un destino NUEVO: orígenes archivados + links de ida/vuelta
+  const cvA = await createTopicFromEntry(
+    await captureEntry({ body: "Convergence origen A" }),
+    "convergence-A"
+  );
+  const cvB = await createTopicFromEntry(
+    await captureEntry({ body: "Convergence origen B" }),
+    "convergence-B"
+  );
+  const destId = await convergeTopics({
+    sourceTopicIds: [cvA, cvB],
+    destination: { kind: "new", title: "convergence-destino" },
+  });
+  const [rowA] = await db.select().from(topics).where(eq(topics.id, cvA));
+  const [rowB] = await db.select().from(topics).where(eq(topics.id, cvB));
+  const evA = await db.select().from(events).where(eq(events.topic_id, cvA));
+  const evDest = await db.select().from(events).where(eq(events.topic_id, destId));
+  const ciA = evA.find((e) => e.type === "converged_into");
+  const cfDest = evDest.find((e) => e.type === "converged_from");
+  const ciPayload = ciA ? JSON.parse(ciA.payload) : {};
+  const cfPayload = cfDest ? JSON.parse(cfDest.payload) : {};
+  console.log(
+    "23) convergencia: orígenes archivados:",
+    rowA.state === "archived" && rowB.state === "archived" ? "OK" : "FALLO"
+  );
+  console.log(
+    "24) navegación de ida (origen → destino):",
+    ciPayload.into_topic_id === destId ? "OK" : "FALLO",
+    "| de vuelta (destino → orígenes):",
+    Array.isArray(cfPayload.from) &&
+      cfPayload.from.some((s: { topic_id: string }) => s.topic_id === cvA) &&
+      cfPayload.from.some((s: { topic_id: string }) => s.topic_id === cvB)
+      ? "OK"
+      : "FALLO"
+  );
+
+  // Convergence hacia un destino EXISTENTE
+  const cvC = await createTopicFromEntry(
+    await captureEntry({ body: "Convergence origen C" }),
+    "convergence-C"
+  );
+  const cvD = await createTopicFromEntry(
+    await captureEntry({ body: "Convergence origen D" }),
+    "convergence-D"
+  );
+  await convergeTopics({
+    sourceTopicIds: [cvC, cvD],
+    destination: { kind: "existing", topicId: destId },
+  });
+  const [rowC] = await db.select().from(topics).where(eq(topics.id, cvC));
+  const evDest2 = await db.select().from(events).where(eq(events.topic_id, destId));
+  console.log(
+    "25) convergencia a topic existente:",
+    rowC.state === "archived" &&
+      evDest2.filter((e) => e.type === "converged_from").length >= 2
+      ? "OK"
+      : "FALLO"
+  );
+
+  // Validaciones: menos de 2 orígenes, y destino que también es origen
+  try {
+    await convergeTopics({
+      sourceTopicIds: [cvA],
+      destination: { kind: "new", title: "no-debería-crearse" },
+    });
+    console.log("26) FALLO: dejó converger con un solo origen");
+  } catch (err) {
+    console.log("26) convergir <2 orígenes bloqueado OK:", (err as Error).message);
+  }
+  try {
+    await convergeTopics({
+      sourceTopicIds: [destId, cvA],
+      destination: { kind: "existing", topicId: destId },
+    });
+    console.log("27) FALLO: dejó que el destino sea también un origen");
+  } catch (err) {
+    console.log("27) destino = origen bloqueado OK:", (err as Error).message);
   }
 }
 

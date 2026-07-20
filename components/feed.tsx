@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import type { entries as entriesTable, events as eventsTable } from "@/db/schema";
 
 type Entry = typeof entriesTable.$inferSelect;
@@ -9,13 +10,18 @@ type EventPayload = {
   title?: string;
   text?: string;
   reason?: string;
+  // Convergence: a dónde convergió este origen / de dónde llegó al destino.
+  into_topic_id?: string;
+  into_title?: string;
+  from?: { topic_id: string; title: string }[];
 };
 
 // El motivo del último archivado sale del historial, no de un campo:
-// estado ≠ historial (regla 4), el motivo vive en su evento.
+// estado ≠ historial (regla 4), el motivo vive en su evento. Un `converged_into`
+// también archiva (con motivo autocompletado), así que cuenta como archivado.
 export function lastArchivedReason(eventRows: Event[]) {
   const archived = eventRows
-    .filter((e) => e.type === "archived")
+    .filter((e) => e.type === "archived" || e.type === "converged_into")
     .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
   return archived
     ? (JSON.parse(archived.payload) as { reason?: string }).reason
@@ -41,8 +47,8 @@ const EVENT_META: Record<
   reactivated: { icon: "▶", className: "border-add bg-add/15 text-add", label: () => "Reactivado" },
   archived: { icon: "▣", className: "border-border bg-muted text-muted-foreground", label: (p) => `Archivado${p.reason ? ` · motivo: ${p.reason}` : ""}` },
   decision: { icon: "✓", className: "border-foreground bg-card text-foreground", label: () => "Decisión" },
-  converged_into: { icon: "⇥", className: "border-merge bg-merge/15 text-merge", label: () => "Convergió" },
-  converged_from: { icon: "⇤", className: "border-merge bg-merge/15 text-merge", label: () => "Recibió convergencia" },
+  converged_into: { icon: "⇥", className: "border-merge bg-merge/15 text-merge", label: () => "Convergió en" },
+  converged_from: { icon: "⇤", className: "border-merge bg-merge/15 text-merge", label: () => "Recibió la convergencia" },
 };
 
 // La gramática GitHub del wireframe: ícono circular sobre un spine vertical,
@@ -133,6 +139,32 @@ export function Feed({
                         ))}
                       </div>
                     )}
+                  </div>
+                )}
+                {/* Link de ida: desde el origen archivado hacia el destino. */}
+                {ev.type === "converged_into" && p.into_topic_id && (
+                  <div className="mt-1.5 text-sm">
+                    <Link
+                      href={`/topics/${p.into_topic_id}`}
+                      className="font-semibold text-merge hover:underline"
+                    >
+                      ⇥ {p.into_title}
+                    </Link>
+                  </div>
+                )}
+                {/* Link de vuelta: desde el destino hacia cada origen. */}
+                {ev.type === "converged_from" && p.from && p.from.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-sm">
+                    <span className="text-muted-foreground">de:</span>
+                    {p.from.map((s) => (
+                      <Link
+                        key={s.topic_id}
+                        href={`/topics/${s.topic_id}`}
+                        className="rounded-full border border-merge px-2 py-0.5 text-xs font-medium text-merge hover:bg-merge/10"
+                      >
+                        {s.title}
+                      </Link>
+                    ))}
                   </div>
                 )}
               </div>

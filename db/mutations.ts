@@ -320,6 +320,123 @@ export async function resolveTrigger(
   await db.update(triggers).set({ status: "fired" }).where(eq(triggers.id, trigger.id));
 }
 
+// --- Shipped y Convergence (Fase 5). Ambos son eventos: no reescriben la
+// historia, la agregan (regla 1). ---
+
+// Shipped: acción manual que estampa la versión del PRODUCTO (regla 6), no la
+// del topic. Es un evento, no un estado: no cambia `state` por sí solo, y un
+// topic puede shippearse más de una vez (v2.0, luego v3.0). `decisionId`
+// opcional linkea qué decisión materializa (river-plan.md §4).
+export async function shipTopic(input: {
+  topicId: string;
+  version: string;
+  decisionId?: string;
+}) {
+  const version = input.version.trim();
+  if (!version)
+    throw new Error("La versión del Shipped es obligatoria (ej: v2.0).");
+  const [topic] = await db
+    .select()
+    .from(topics)
+    .where(eq(topics.id, input.topicId));
+  if (!topic) throw new Error("El topic no existe.");
+  await db.insert(events).values({
+    id: randomUUID(),
+    topic_id: input.topicId,
+    type: "shipped",
+    payload: JSON.stringify({
+      version,
+      ...(input.decisionId ? { decision_id: input.decisionId } : {}),
+    }),
+    created_at: now(),
+  });
+}
+
+// Convergence: une 2+ topics en uno (nuevo o existente). Los orígenes pasan a
+// archived con motivo autocompletado y queda link bidireccional (river-plan.md
+// §4). Devuelve el id del destino para poder navegar hacia él.
+//   - destino: evento `converged_from` con la lista de orígenes.
+//   - cada origen: state → archived + evento `converged_into` que apunta al
+//     destino. Ese evento ES el archivado: lleva el motivo (regla 3) y es el
+//     evento que deja el cambio de estado (regla 4).
+export async function convergeTopics(input: {
+  sourceTopicIds: string[];
+  destination:
+    | { kind: "existing"; topicId: string }
+    | { kind: "new"; title: string };
+}) {
+  const sourceIds = [...new Set(input.sourceTopicIds)];
+  if (sourceIds.length < 2)
+    throw new Error("Convergence une 2 o más topics: elegí al menos dos.");
+
+  // Resolver destino (crear uno nuevo o usar uno existente).
+  let destId: string;
+  let destTitle: string;
+  if (input.destination.kind === "new") {
+    const title = input.destination.title.trim();
+    if (!title) throw new Error("El título del topic destino es obligatorio.");
+    destId = await createTopic({ title });
+    destTitle = title;
+  } else {
+    const [dest] = await db
+      .select()
+      .from(topics)
+      .where(eq(topics.id, input.destination.topicId));
+    if (!dest) throw new Error("El topic destino no existe.");
+    destId = dest.id;
+    destTitle = dest.title;
+  }
+
+  if (sourceIds.includes(destId))
+    throw new Error("El destino no puede ser también un origen de la convergencia.");
+
+  // Cargar y validar cada origen.
+  const sources: { topic_id: string; title: string }[] = [];
+  for (const sid of sourceIds) {
+    const [t] = await db.select().from(topics).where(eq(topics.id, sid));
+    if (!t) throw new Error("Uno de los topics de origen no existe.");
+    sources.push({ topic_id: t.id, title: t.title });
+  }
+
+  // Evento en el destino: recibió la convergencia (con sus orígenes → link de vuelta).
+  await db.insert(events).values({
+    id: randomUUID(),
+    topic_id: destId,
+    type: "converged_from",
+    payload: JSON.stringify({ from: sources }),
+    created_at: now(),
+  });
+
+  // Cada origen se archiva con motivo autocompletado y apunta al destino (link de ida).
+  for (const s of sources) {
+    await db.update(topics).set({ state: "archived" }).where(eq(topics.id, s.topic_id));
+    await db.insert(events).values({
+      id: randomUUID(),
+      topic_id: s.topic_id,
+      type: "converged_into",
+      payload: JSON.stringify({
+        reason: `Convergió en "${destTitle}"`,
+        into_topic_id: destId,
+        into_title: destTitle,
+      }),
+      created_at: now(),
+    });
+    // Un disparador pendiente ya no tiene sentido si el origen se archivó al converger.
+    await db
+      .update(triggers)
+      .set({ status: "dismissed" })
+      .where(
+        and(
+          eq(triggers.target_type, "topic"),
+          eq(triggers.target_id, s.topic_id),
+          eq(triggers.status, "pending")
+        )
+      );
+  }
+
+  return destId;
+}
+
 // Regla 2: borrar solo mientras la entry está en el inbox,
 // es decir antes de formar parte de la historia de un topic.
 export async function deleteInboxEntry(entryId: string) {

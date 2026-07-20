@@ -13,6 +13,8 @@ import {
   reactivateTarget,
   snoozeTarget,
   resolveTrigger,
+  shipTopic,
+  convergeTopics,
   type TriggerInput,
 } from "@/db/mutations";
 
@@ -145,6 +147,45 @@ export async function snoozeAction(formData: FormData) {
     trigger,
   });
   refresh();
+}
+
+// Shipped (Fase 5): estampa la versión del producto. Es un evento, no cambia
+// el estado del topic.
+export async function shipAction(formData: FormData) {
+  const version = String(formData.get("version") ?? "").trim();
+  if (!version) return; // la UI ya lo exige; el backend valida igual
+  await shipTopic({ topicId: String(formData.get("topic_id")), version });
+  refresh();
+}
+
+// Convergence (Fase 5): une 2+ topics en uno (nuevo o existente). Redirige al
+// destino para ver el resultado (y desde ahí navegar a los orígenes).
+export async function convergeAction(formData: FormData) {
+  const sourceTopicIds = formData
+    .getAll("source_topic_id")
+    .map(String)
+    .filter(Boolean);
+  if (sourceTopicIds.length < 2) return;
+
+  const destKind = String(formData.get("dest_kind") ?? "");
+  let destId: string;
+  if (destKind === "new") {
+    const title = String(formData.get("dest_title") ?? "").trim();
+    if (!title) return;
+    destId = await convergeTopics({
+      sourceTopicIds,
+      destination: { kind: "new", title },
+    });
+  } else {
+    const topicId = String(formData.get("dest_topic_id") ?? "");
+    if (!topicId) return;
+    destId = await convergeTopics({
+      sourceTopicIds,
+      destination: { kind: "existing", topicId },
+    });
+  }
+  refresh();
+  redirect(`/topics/${destId}`);
 }
 
 // Resolución de Reentry: reactivar, re-dormir o archivar (con motivo).

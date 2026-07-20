@@ -14,7 +14,9 @@ import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
+import { ShipAction } from "@/components/ship-action";
 import { Feed, fmtDate, lastArchivedReason } from "@/components/feed";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +44,12 @@ export default async function TopicPage({
 
   const mainEntries = allEntries.filter((e) => e.thread_id === null);
   const mainEvents = allEvents.filter((e) => e.thread_id === null);
+
+  // Un topic puede shippearse más de una vez: mostramos la versión más reciente.
+  const shippedVersion = mainEvents
+    .filter((e) => e.type === "shipped")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map((e) => (JSON.parse(e.payload) as { version?: string }).version)[0];
 
   // Fuentes citadas por las decisiones del main (event_id → labels)
   const decisionIds = mainEvents
@@ -80,6 +88,9 @@ export default async function TopicPage({
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold tracking-tight">{topic.title}</h1>
           <StateBadge state={topic.state} />
+          {shippedVersion && (
+            <Badge variant="secondary">★ Shipped {shippedVersion}</Badge>
+          )}
           <span className="ml-auto text-xs text-muted-foreground">
             desde {fmtDate(topic.created_at)}
           </span>
@@ -96,6 +107,7 @@ export default async function TopicPage({
           archivedReason={lastArchivedReason(mainEvents)}
           pendingTrigger={topicTrigger}
         />
+        <ShipAction topicId={topic.id} />
 
         <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Main

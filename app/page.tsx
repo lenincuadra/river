@@ -9,6 +9,7 @@ import {
 import { allPendingTriggers } from "@/db/mutations";
 import { isDue } from "@/lib/triggers";
 import { Topbar } from "@/components/topbar";
+import { ConvergePanel } from "@/components/converge-panel";
 import { StateBadge } from "@/components/state-badge";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -48,10 +49,18 @@ export default async function Home() {
     )
     .map((topic) => {
     const topicEvents = events.filter((e) => e.topic_id === topic.id);
-    const shipped = topicEvents.find((e) => e.type === "shipped");
-    const shippedVersion = shipped
-      ? (JSON.parse(shipped.payload) as { version?: string }).version
-      : null;
+    // Un topic puede shippearse más de una vez: mostramos la más reciente.
+    const shippedVersion = topicEvents
+      .filter((e) => e.type === "shipped")
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .map((e) => (JSON.parse(e.payload) as { version?: string }).version)[0] ?? null;
+    // Si convergió, guardamos a dónde para poder saltar al destino desde acá.
+    const convergedInto = topicEvents
+      .filter((e) => e.type === "converged_into")
+      .map(
+        (e) =>
+          JSON.parse(e.payload) as { into_topic_id?: string; into_title?: string }
+      )[0];
     return {
       topic,
       threadCount: threads.filter(
@@ -60,8 +69,15 @@ export default async function Home() {
       entryCount: entries.filter((e) => e.topic_id === topic.id).length,
       decisionCount: topicEvents.filter((e) => e.type === "decision").length,
       shippedVersion,
+      convergedInto,
     };
     });
+
+  // Solo los topics vivos (no archivados) pueden ser origen/destino de una
+  // convergencia: los archivados ya cerraron su ciclo.
+  const convergibles = topics
+    .filter((t) => t.state !== "archived")
+    .map((t) => ({ id: t.id, title: t.title }));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -101,7 +117,7 @@ export default async function Home() {
         </p>
 
         <div className="mt-6 flex flex-col gap-4">
-          {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion }) => (
+          {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto }) => (
             <Card key={topic.id}>
               <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
@@ -136,10 +152,23 @@ export default async function Home() {
                     {decisionCount === 1 ? "decisión" : "decisiones"}
                   </span>
                 </div>
+                {convergedInto?.into_topic_id && (
+                  <div className="mt-2 text-xs">
+                    <Link
+                      href={`/topics/${convergedInto.into_topic_id}`}
+                      className="font-medium text-merge hover:underline"
+                    >
+                      ⇥ convergió en {convergedInto.into_title}
+                    </Link>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Convergence (Fase 5): unir dos o más topics en uno. */}
+        {convergibles.length >= 2 && <ConvergePanel topics={convergibles} />}
       </main>
     </div>
   );
