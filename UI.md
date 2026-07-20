@@ -27,9 +27,11 @@ del sistema en `CLAUDE.md`.
 5b. **Un solo ícono de timeline**: cuadrado `size-6` con bordes redondeados
    (`TIMELINE_ICON` en `components/feed.tsx`), glifo `size-3.5` adentro.
    Mismo tamaño y forma en el feed, el riel de threads y los CTAs.
-5c. **Los threads nunca se apilan**: siempre van al lado. Si no entran, la
-   fila es un carrusel (a cualquier tamaño de pantalla) y cierra con el CTA
-   de crear thread, del mismo tamaño que una card de thread.
+5c. **Las ramificaciones nunca se apilan**: threads y subthreads siempre van
+   al lado. Si no entran, la fila es un carrusel (a cualquier tamaño de
+   pantalla) que cierra con el CTA de crear, del mismo tamaño que una card.
+   Los dos niveles comparten componente (`components/branch-carousel.tsx`) y
+   compositor con la misma lógica (`main-composer.tsx` / `thread-composer.tsx`).
 
 ## Acciones
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { GitBranch, Pencil, Plus } from "lucide-react";
+import { GitBranch, Plus } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -9,19 +9,14 @@ import {
   entries as entriesTable,
   events as eventsTable,
 } from "@/db/schema";
-import { addThreadEntryAction, createThreadAction } from "@/app/actions";
 import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
-import { CardLink } from "@/components/card-link";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
-import { FormDialog } from "@/components/form-dialog";
-import { SubmitButton } from "@/components/submit-button";
+import { ThreadComposer } from "@/components/thread-composer";
+import { BranchCarousel, type Branch } from "@/components/branch-carousel";
 import { Feed, FeedActionRow, fmtDate, lastArchivedReason } from "@/components/feed";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
   Breadcrumb,
@@ -46,10 +41,10 @@ export default async function ThreadPage({
     .where(eq(threadsTable.id, threadId));
   if (!thread || thread.topic_id !== id) notFound();
 
-  const [[topic], threadEntries, threadEvents, topicThreads, threadTrigger] =
+  const [[topic], topicEntries, threadEvents, topicThreads, threadTrigger] =
     await Promise.all([
       db.select().from(topicsTable).where(eq(topicsTable.id, id)),
-      db.select().from(entriesTable).where(eq(entriesTable.thread_id, threadId)),
+      db.select().from(entriesTable).where(eq(entriesTable.topic_id, id)),
       db.select().from(eventsTable).where(eq(eventsTable.thread_id, threadId)),
       db.select().from(threadsTable).where(eq(threadsTable.topic_id, id)),
       pendingTriggerFor("thread", threadId),
@@ -60,15 +55,34 @@ export default async function ThreadPage({
   const parent = isSubthread
     ? topicThreads.find((t) => t.id === thread.parent_thread_id)
     : undefined;
-  const subs = topicThreads.filter((t) => t.parent_thread_id === thread.id);
+  const threadEntries = topicEntries.filter((e) => e.thread_id === threadId);
   const originEntry = thread.origin_entry_id
-    ? (
-        await db
-          .select()
-          .from(entriesTable)
-          .where(eq(entriesTable.id, thread.origin_entry_id))
-      )[0]
+    ? topicEntries.find((e) => e.id === thread.origin_entry_id)
     : undefined;
+
+  // Las entries de cada subthread se ven acá mismo (UI.md §5).
+  const entriesOf = (tid: string) =>
+    topicEntries
+      .filter((e) => e.thread_id === tid)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const subs: Branch[] = topicThreads
+    .filter((t) => t.parent_thread_id === thread.id)
+    .map((s) => {
+      const sEntries = entriesOf(s.id);
+      return {
+        id: s.id,
+        title: s.title,
+        state: s.state,
+        createdAt: s.created_at,
+        href: `/topics/${topic.id}/threads/${s.id}`,
+        entryCount: sEntries.length,
+        entries: sEntries.map((e) => ({
+          id: e.id,
+          author: e.author_label,
+          body: e.body,
+        })),
+      };
+    });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -135,125 +149,55 @@ export default async function ThreadPage({
             entries={threadEntries}
             events={threadEvents}
             tail={
-              // Agregar entry: sigue en el timeline, la línea llega hasta acá
+              // Un solo empty state al final del timeline (UI.md): lo próximo
+              // acá es UNA cosa — entry, o subthread si aún puede ramificarse.
               <FeedActionRow
-                icon={<Pencil className="size-3.5" />}
-                iconClassName="border-add/50 bg-add/10 text-add"
+                icon={<Plus className="size-3.5" />}
+                iconClassName="border-border bg-muted text-muted-foreground"
               >
-                <form
-                  action={addThreadEntryAction}
-                  className="rounded-lg border border-dashed border-border bg-card/50 p-4"
-                >
-                  <input type="hidden" name="thread_id" value={thread.id} />
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="author_label"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Autor
-                    </Label>
-                    <Input
-                      id="author_label"
-                      name="author_label"
-                      defaultValue="Yo"
-                      className="h-7 w-32 text-sm"
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      (editalo para citar a alguien: &quot;Martina&quot;)
-                    </span>
-                  </div>
-                  <Textarea
-                    name="body"
-                    required
-                    placeholder={`Escribir una entry en ${thread.title}…`}
-                    className="mt-3 min-h-20 text-sm"
-                  />
-                  <div className="mt-3 flex justify-end">
-                    <SubmitButton size="sm">
-                      <Pencil /> Agregar entry
-                    </SubmitButton>
-                  </div>
-                </form>
+                <ThreadComposer
+                  topicId={topic.id}
+                  threadId={thread.id}
+                  threadTitle={thread.title}
+                  canBranch={!isSubthread}
+                />
               </FeedActionRow>
             }
           />
         </div>
 
-        {/* Subthreads: solo desde un thread de primer nivel (regla 5) */}
+        {/* Subthreads: solo desde un thread de primer nivel (regla 5). Misma
+            lógica de diseño que los threads del topic (BranchCarousel). */}
         {!isSubthread && (
-          <>
-            <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Subthreads
-            </h2>
-            {subs.length === 0 ? (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Este thread todavía no se ramificó. Cuando dos posturas no
-                puedan convivir acá, nace el primer subthread.
-              </p>
-            ) : (
-              <div className="mt-3 flex flex-col gap-2">
-                {subs.map((s) => (
-                  <div
-                    key={s.id}
-                    className="relative rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm"
-                  >
-                    <CardLink
-                      href={`/topics/${topic.id}/threads/${s.id}`}
-                      label={s.title}
-                    />
-                    <span className="inline-flex items-center gap-1 font-semibold">
-                      <GitBranch className="size-3" /> {s.title}
-                    </span>
-                    <span className="float-right">
-                      <StateBadge state={s.state} />
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-3">
-              <FormDialog
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-merge hover:text-merge"
-                  />
-                }
-                triggerLabel={
-                  <>
-                    <Plus /> Crear subthread
-                  </>
-                }
-                title="Nuevo subthread"
-                description="Nivel máximo de profundidad (regla 5): topic → thread → subthread. Acá se separa una postura que ya no convive en el thread."
-                submitLabel="Crear subthread"
-                action={createThreadAction}
-              >
+          <BranchCarousel
+            heading="Subthreads"
+            label="Subthread"
+            branches={subs}
+            ctaLabel="Crear subthread"
+            ctaHint="Para la postura que ya no convive en este thread"
+            dialogTitle="Nuevo subthread"
+            dialogDescription="Nivel máximo de profundidad (regla 5): topic → thread → subthread. Acá se separa una postura que ya no convive en el thread."
+            submitLabel="Crear subthread"
+            dialogChildren={
+              <>
                 <input type="hidden" name="topic_id" value={topic.id} />
                 <input type="hidden" name="parent_thread_id" value={thread.id} />
                 <Field>
-                  <FieldLabel htmlFor="new-subthread-title">
+                  <FieldLabel htmlFor="carousel-subthread-title">
                     Título del subthread
                   </FieldLabel>
                   <Input
-                    id="new-subthread-title"
+                    id="carousel-subthread-title"
                     name="title"
                     required
                     autoFocus
-                    placeholder="Título del subthread…"
+                    placeholder="La postura que se separa…"
                     className="text-sm"
                   />
                 </Field>
-              </FormDialog>
-            </div>
-          </>
-        )}
-        {isSubthread && (
-          <p className="mt-8 text-xs text-muted-foreground">
-            Este es un subthread: nivel máximo de profundidad (topic → thread →
-            subthread). Acá no se ramifica más.
-          </p>
+              </>
+            }
+          />
         )}
       </main>
     </div>

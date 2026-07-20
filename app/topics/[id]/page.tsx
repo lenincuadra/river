@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
-import { Star, Waypoints, GitBranch, Plus } from "lucide-react";
+import { Star, Waypoints, Plus } from "lucide-react";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -10,21 +10,13 @@ import {
   events as eventsTable,
   eventSources as eventSourcesTable,
 } from "@/db/schema";
-import { createThreadAction } from "@/app/actions";
 import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
-import { CardLink } from "@/components/card-link";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
 import { MainComposer } from "@/components/main-composer";
-import { FormDialog } from "@/components/form-dialog";
-import {
-  Feed,
-  FeedActionRow,
-  TIMELINE_ICON,
-  fmtDate,
-  lastArchivedReason,
-} from "@/components/feed";
+import { BranchCarousel, type Branch } from "@/components/branch-carousel";
+import { Feed, FeedActionRow, fmtDate, lastArchivedReason } from "@/components/feed";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,6 +114,34 @@ export default async function TopicPage({
       label: `${e.author_label}: ${e.body.length > 60 ? e.body.slice(0, 60) + "…" : e.body}`,
     }));
 
+  // Ramificaciones para el carrusel compartido (misma lógica que los
+  // subthreads en la página de thread).
+  const branches: Branch[] = topThreads.map((t) => {
+    const author = originAuthor(t.origin_entry_id);
+    const tEntries = entriesOf(t.id);
+    return {
+      id: t.id,
+      title: t.title,
+      state: t.state,
+      createdAt: t.created_at,
+      href: `/topics/${topic.id}/threads/${t.id}`,
+      origin: author ? `desde una entry de ${author}` : undefined,
+      entryCount: tEntries.length,
+      entries: tEntries.map((e) => ({
+        id: e.id,
+        author: e.author_label,
+        body: e.body,
+      })),
+      children: subsOf(t.id).map((s) => ({
+        id: s.id,
+        title: s.title,
+        href: `/topics/${topic.id}/threads/${s.id}`,
+        state: s.state,
+        entryCount: entryCount(s.id),
+      })),
+    };
+  });
+
   return (
     <div className="flex flex-1 flex-col">
       <Topbar currentTopic={{ id: topic.id, title: topic.title }} />
@@ -193,158 +213,36 @@ export default async function TopicPage({
           />
         </div>
 
-        {/* Threads: columnas siempre al lado (nunca apiladas). La línea del
-            main sigue hacia abajo hasta el riel; el carrusel cierra con el
-            CTA de thread nuevo, del mismo tamaño que una card. */}
-        <div className="relative mt-10">
-          <span
-            aria-hidden
-            className="absolute -top-10 left-[11.5px] h-[4.75rem] w-px bg-border"
-          />
-          <h2 className="pl-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Threads
-          </h2>
-          <div className="mt-4 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 max-sm:-mx-5 max-sm:scroll-px-5 max-sm:px-5">
-            {topThreads.map((t) => {
-              const author = originAuthor(t.origin_entry_id);
-              const subs = subsOf(t.id);
-              const tEntries = entriesOf(t.id);
-              return (
-                <div
-                  key={t.id}
-                  className="relative flex w-[85%] shrink-0 snap-center flex-col sm:w-80 sm:snap-start"
-                >
-                  {/* Riel (wireframe): une este ícono con el del vecino de la
-                      derecha (o el CTA final), y baja del ícono a la card. */}
-                  <span
-                    aria-hidden
-                    className="absolute -right-8 left-3 top-3 h-px bg-border"
-                  />
-                  <span
-                    aria-hidden
-                    className="absolute left-3 top-3 h-5 w-px bg-border"
-                  />
-                  <span className={`${TIMELINE_ICON} relative border-merge bg-merge/15 text-merge`}>
-                    <GitBranch className="size-3.5" />
-                  </span>
-
-                  {/* Card entera clickeable; adentro va todo: qué es, de dónde
-                      viene, fecha, y sus entries a la vista. */}
-                  <div className="relative mt-2 flex-1 rounded-lg border border-border bg-card p-3.5">
-                    <CardLink
-                      href={`/topics/${topic.id}/threads/${t.id}`}
-                      label={t.title}
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      <b className="text-foreground">Thread</b>
-                      {author && <> desde una entry de {author}</>}
-                      <span className="float-right">{fmtDate(t.created_at)}</span>
-                    </div>
-                    <div className="mt-1.5 flex items-center gap-1.5 text-sm font-bold">
-                      <GitBranch className="size-4" /> {t.title}
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span>
-                        <span className="font-semibold text-add">
-                          +{entryCount(t.id)}
-                        </span>{" "}
-                        entries
-                      </span>
-                      <StateBadge state={t.state} />
-                    </div>
-                    {tEntries.length > 0 && (
-                      <div className="mt-3 flex flex-col gap-2">
-                        {tEntries.map((en) => (
-                          <div key={en.id} className="line-clamp-3 text-xs">
-                            <b>{en.author_label}</b>{" "}
-                            <span className="text-muted-foreground">
-                              {en.body}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {subs.length > 0 && (
-                      <div className="mt-3 flex flex-col gap-2">
-                        {subs.map((s) => (
-                          <div
-                            key={s.id}
-                            className="relative z-[1] rounded-md border border-border bg-card px-2.5 py-2 text-xs"
-                          >
-                            <CardLink
-                              href={`/topics/${topic.id}/threads/${s.id}`}
-                              label={s.title}
-                            />
-                            <span className="inline-flex items-center gap-1 font-semibold">
-                              <GitBranch className="size-3" /> {s.title}
-                            </span>
-                            <span className="ml-2 text-muted-foreground">
-                              {entryCount(s.id)}{" "}
-                              {entryCount(s.id) === 1 ? "entry" : "entries"}
-                            </span>
-                            <span className="float-right">
-                              <StateBadge state={s.state} />
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Cierre del carrusel: empty state para ramificar, del mismo
-                tamaño que un thread. */}
-            <div className="relative flex w-[85%] shrink-0 snap-center flex-col sm:w-80 sm:snap-start">
-              <span
-                aria-hidden
-                className="absolute left-3 top-3 h-5 w-px bg-border"
-              />
-              <span className={`${TIMELINE_ICON} relative border-border bg-muted text-muted-foreground`}>
-                <Plus className="size-3.5" />
-              </span>
-              <div className="mt-2 flex flex-1">
-                <FormDialog
-                  trigger={
-                    <button
-                      type="button"
-                      className="flex min-h-40 flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-card/50 p-4 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-                    />
-                  }
-                  triggerLabel={
-                    <>
-                      <GitBranch className="size-5 text-merge" />
-                      <span className="text-sm font-semibold">Nuevo thread</span>
-                      <span className="text-xs">
-                        Para el debate que ya no convive en el main
-                      </span>
-                    </>
-                  }
-                  title="Nuevo thread"
-                  description="Un debate propio del topic, sin entry que lo origine. Tendrá estado y disparador propios. (Para ramificar desde una entry puntual, usá «Crear thread» en esa entry.)"
-                  submitLabel="Crear thread"
-                  action={createThreadAction}
-                >
-                  <input type="hidden" name="topic_id" value={topic.id} />
-                  <Field>
-                    <FieldLabel htmlFor="carousel-thread-title">
-                      Título del thread
-                    </FieldLabel>
-                    <Input
-                      id="carousel-thread-title"
-                      name="title"
-                      required
-                      autoFocus
-                      placeholder="El debate que se abre…"
-                      className="text-sm"
-                    />
-                  </Field>
-                </FormDialog>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Threads: misma lógica de diseño que los subthreads en la página
+            de thread — un solo componente (BranchCarousel, UI.md). */}
+        <BranchCarousel
+          heading="Threads"
+          label="Thread"
+          branches={branches}
+          ctaLabel="Nuevo thread"
+          ctaHint="Para el debate que ya no convive en el main"
+          dialogTitle="Nuevo thread"
+          dialogDescription="Un debate propio del topic, sin entry que lo origine. Tendrá estado y disparador propios. (Para ramificar desde una entry puntual, usá «Crear thread» en esa entry.)"
+          submitLabel="Crear thread"
+          dialogChildren={
+            <>
+              <input type="hidden" name="topic_id" value={topic.id} />
+              <Field>
+                <FieldLabel htmlFor="carousel-thread-title">
+                  Título del thread
+                </FieldLabel>
+                <Input
+                  id="carousel-thread-title"
+                  name="title"
+                  required
+                  autoFocus
+                  placeholder="El debate que se abre…"
+                  className="text-sm"
+                />
+              </Field>
+            </>
+          }
+        />
 
       </main>
     </div>
