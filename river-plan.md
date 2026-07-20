@@ -148,7 +148,7 @@ Fuentes citadas por un evento (usada por eventos `decision`; queda disponible pa
 - **Next.js + TypeScript** (App Router): frontend y API en un solo proyecto, corre local con `npm run dev`.
 - **SQLite** vía **Drizzle ORM** (o better-sqlite3 directo si Drizzle agrega fricción): un archivo `river.db` local, backup = copiar el archivo.
 - **Tailwind CSS + shadcn/ui** para la UI. shadcn/ui no es una librería que se instala como dependencia: son componentes que se copian dentro del proyecto (botones, dropdowns, dialogs, inputs) y quedan editables. Encaja con la topbar, el switcher de topic, los dialogs de snooze/archive y los chips de estado. Configurar shadcn/Tailwind directamente en modo oscuro fijo: sin `next-themes`, sin clase `dark` condicional, sin variables para tema claro.
-- Sin auth, sin deploy obligatorio. Si algún día se quiere en el celular, se evalúa recién ahí (deploy simple o PWA).
+- Sin auth, sin deploy obligatorio. Si algún día se quiere en el celular, se evalúa recién ahí (deploy simple o PWA). **Actualización 19 jul 2026: ese día llegó; evaluado y decidido en §10.**
 
 Justificación: es el stack que Claude Code maneja con más soltura, mínimo de piezas móviles, y todo local.
 
@@ -218,3 +218,20 @@ Dirección definitiva (ver `river-wireframe-board-v3.html`): **todo desciende po
 - Pedir siempre: *"explicame qué hiciste y por qué, como si no supiera programar"*. Ese hábito convierte el proyecto en clase de programación.
 - **Git en vivo:** pedirle a Claude Code que haga un commit al final de cada fase y que muestre el log. Construir River es, a la vez, el curso práctico de git: cada commit es una entry, cada rama un thread, el log es el main. La app y la herramienta se explican mutuamente.
 - Si algo se rompe, no borrar nada: pedirle a Claude Code que vuelva al último commit que funcionaba. (Esa es la magia del historial que nunca se pierde, la misma filosofía de River.)
+
+---
+
+## 10. Acceso móvil (decidido el 19 jul 2026)
+
+**Dos instancias, un solo código.** El mismo repo alimenta dos Rivers con datos separados:
+
+- **Personal (celular + Mac):** deployada en **Vercel** con los datos en **Turso** (SQLite en la nube, plan gratuito). Vercel se conecta a GitHub: cada `git push` actualiza la instancia sola — no hay doble mantenimiento de código, solo dos bases de datos.
+- **Trabajo (solo local):** este repo corriendo en la Mac con `npm run dev` y el archivo `river.db`. Nada del trabajo sale de la máquina.
+
+**Cómo elige modo la app:** por variables de entorno. Sin nada seteado usa el archivo local; con `TURSO_DATABASE_URL` (+ `TURSO_AUTH_TOKEN`) usa Turso. Un solo código, cero ifs esparcidos: la decisión vive en `db/index.ts`.
+
+**Protección:** la instancia personal está en internet, así que tiene una pantalla de login con **una sola contraseña** (`RIVER_PASSWORD`). Se entra una vez por dispositivo y queda recordado un año. Sin esa variable no hay login: la instancia local de trabajo ni se entera. Sigue siendo single-user: la contraseña es un portón, no un sistema de cuentas.
+
+**En el celular:** desde el navegador, "Agregar a pantalla de inicio" — River se abre como app propia (ícono 1R, pantalla completa). La guía paso a paso del deploy está en `DEPLOY.md`.
+
+**Backup de la instancia personal:** los datos viven en Turso; backup = `turso db shell river ".dump" > backup.sql` (la local sigue siendo copiar `river.db`).

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { db, sqlite } from "../db";
+import { db, client } from "../db";
 import {
   topics,
   threads,
@@ -19,7 +19,8 @@ const at = (iso: string) => `${iso}:00.000Z`;
 async function seed() {
   // topic ↔ entry de origen se referencian mutuamente: ningún orden de
   // inserción satisface las FKs, así que se apagan solo durante el seed.
-  sqlite.pragma("foreign_keys = OFF");
+  // (Turso puede no aceptar el pragma; ahí las FKs ya vienen desactivadas.)
+  await client.execute("PRAGMA foreign_keys = OFF").catch(() => {});
 
   // --- IDs cruzados ---
   const topicId = id();

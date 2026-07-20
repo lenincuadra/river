@@ -1,10 +1,13 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import path from "node:path";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
-// Un solo archivo local, fácil de respaldar: copiar river.db (regla 8).
-export const sqlite = new Database(path.join(process.cwd(), "river.db"));
-sqlite.pragma("journal_mode = WAL");
+// Dos instancias, un mismo código (river-plan.md §10):
+// - Trabajo/local: sin env vars → archivo river.db en la raíz (backup = copiarlo).
+// - Personal/nube: TURSO_DATABASE_URL (+ TURSO_AUTH_TOKEN) → Turso.
+export const client = createClient({
+  url: process.env.TURSO_DATABASE_URL ?? "file:river.db",
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(client, { schema });

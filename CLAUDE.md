@@ -13,7 +13,7 @@ River es una app **personal y local** (un solo usuario, sin cuentas) para regist
 5. **Profundidad máxima 2**: topic → thread → subthread. Validar en backend, no solo en UI.
 6. **Las versiones son del producto, no de los topics.** Un topic se estampa "Shipped en vX.Y", nunca tiene versión propia.
 7. **Captura sin fricción.** Capturar una entry nunca exige decidir dónde va: existe un inbox para procesar después.
-8. **Un solo usuario, local.** Sin auth, sin sync, sin multiusuario. Los datos viven en `river.db` (SQLite local, gitignoreado); backup = copiar el archivo.
+8. **Un solo usuario, dos instancias** (river-plan.md §10). Sin multiusuario ni sistema de cuentas. Instancia de trabajo: local, archivo `river.db` (gitignoreado), sin login; backup = copiar el archivo. Instancia personal: Vercel + Turso, protegida por una contraseña única (`RIVER_PASSWORD` + `proxy.ts`); backup = dump de Turso. El modo lo deciden las env vars en `db/index.ts`.
 9. **Los threads tienen estado y disparador propios**, independientes del topic padre.
 10. **Dark mode exclusivo en la v1.** Una sola paleta oscura definida en `:root`. Sin light mode, sin toggle, sin `next-themes`, sin clase `dark` condicional, sin variantes claras "por si acaso".
 
@@ -28,7 +28,7 @@ Regla práctica: si el usuario quiere ponerle disparador, no es `archived`, es `
 ## Stack y convenciones
 
 - Next.js (App Router) + TypeScript. Frontend y API en un solo proyecto, corre con `npm run dev`.
-- SQLite vía Drizzle ORM (`db/schema.ts`); archivo `river.db` en la raíz. Nombres de tablas/campos en inglés, snake_case.
+- SQLite vía Drizzle ORM + libsql (`db/schema.ts`, `db/index.ts`): archivo `river.db` local por defecto, Turso si hay `TURSO_DATABASE_URL`. Nombres de tablas/campos en inglés, snake_case. Deploy personal en Vercel: guía en `DEPLOY.md`.
 - Tailwind CSS + shadcn/ui (componentes copiados al repo, editables).
 - Textos de UI en español; código en inglés.
 - Scripts: `npm run db:reset` (recrea la DB y la puebla con el caso de ejemplo dark-mode/Martina).
