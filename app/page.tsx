@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -5,23 +6,19 @@ import {
   entries as entriesTable,
   events as eventsTable,
 } from "@/db/schema";
+import { Topbar } from "@/components/topbar";
+import { StateBadge } from "@/components/state-badge";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
-
-const STATE_LABEL = {
-  active: "Active",
-  snoozed: "Snoozed",
-  archived: "Archived",
-} as const;
 
 function monthYear(iso: string) {
   return new Intl.DateTimeFormat("es", {
@@ -37,8 +34,6 @@ export default async function Home() {
     db.select().from(entriesTable),
     db.select().from(eventsTable),
   ]);
-
-  const inboxCount = entries.filter((e) => e.topic_id === null).length;
 
   const rows = topics.map((topic) => {
     const topicEvents = events.filter((e) => e.topic_id === topic.id);
@@ -59,21 +54,19 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="flex items-center gap-3 border-b border-border px-5 py-3">
-        <div className="flex items-center gap-2 text-sm font-extrabold tracking-wider">
-          <span className="flex size-6 items-center justify-center rounded-md bg-river text-xs font-extrabold text-background">
-            1R
-          </span>
-          RIVER
-        </div>
-        <div className="flex-1" />
-        <Badge variant="outline" className="text-muted-foreground">
-          📥 Inbox · {inboxCount}
-        </Badge>
-      </header>
+      <Topbar />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
-        <h1 className="text-xl font-bold tracking-tight">Topics</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold tracking-tight">Topics</h1>
+          <div className="flex-1" />
+          <Link
+            href="/topics/new"
+            className={buttonVariants({ size: "sm", variant: "outline" })}
+          >
+            ＋ Nuevo topic
+          </Link>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Cada topic es una línea de vida: su historial solo crece, nunca se
           reescribe.
@@ -84,19 +77,12 @@ export default async function Home() {
             <Card key={topic.id}>
               <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle className="text-base">{topic.title}</CardTitle>
-                  <Badge variant="outline">
-                    <span
-                      className={
-                        topic.state === "active"
-                          ? "size-1.5 rounded-full bg-add"
-                          : topic.state === "snoozed"
-                            ? "size-1.5 rounded-full border border-foreground"
-                            : "size-1.5 rounded-full bg-muted-foreground"
-                      }
-                    />
-                    {STATE_LABEL[topic.state]}
-                  </Badge>
+                  <CardTitle className="text-base">
+                    <Link href={`/topics/${topic.id}`} className="hover:underline">
+                      {topic.title}
+                    </Link>
+                  </CardTitle>
+                  <StateBadge state={topic.state} />
                   {shippedVersion && (
                     <Badge variant="secondary">★ Shipped {shippedVersion}</Badge>
                   )}
@@ -123,9 +109,6 @@ export default async function Home() {
                   </span>
                 </div>
               </CardContent>
-              <CardFooter className="text-xs text-muted-foreground">
-                El board jerárquico de este topic llega en las próximas fases.
-              </CardFooter>
             </Card>
           ))}
         </div>
