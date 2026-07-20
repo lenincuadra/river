@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { eq, and, isNull, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -8,35 +9,16 @@ import {
   events as eventsTable,
   eventSources as eventSourcesTable,
 } from "@/db/schema";
-import { addEntryAction } from "@/app/actions";
+import { addEntryAction, createThreadAction } from "@/app/actions";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
-import { Badge } from "@/components/ui/badge";
+import { Feed, fmtDate } from "@/components/feed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export const dynamic = "force-dynamic";
 
-type EventPayload = {
-  version?: string;
-  title?: string;
-  text?: string;
-  reason?: string;
-  trigger?: string;
-  fire_date?: string;
-  condition?: string;
-};
-
-function fmtDate(iso: string) {
-  return new Intl.DateTimeFormat("es", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(iso));
-}
-
-// El main: entries + eventos intercalados en orden cronológico (vocabulario oficial).
 export default async function TopicPage({
   params,
 }: {
@@ -49,19 +31,17 @@ export default async function TopicPage({
     .where(eq(topicsTable.id, id));
   if (!topic) notFound();
 
-  const [mainEntries, topicEvents, topicThreads] = await Promise.all([
-    db
-      .select()
-      .from(entriesTable)
-      .where(and(eq(entriesTable.topic_id, id), isNull(entriesTable.thread_id))),
-    db
-      .select()
-      .from(eventsTable)
-      .where(and(eq(eventsTable.topic_id, id), isNull(eventsTable.thread_id))),
+  const [allEntries, allEvents, allThreads] = await Promise.all([
+    db.select().from(entriesTable).where(eq(entriesTable.topic_id, id)),
+    db.select().from(eventsTable).where(eq(eventsTable.topic_id, id)),
     db.select().from(threadsTable).where(eq(threadsTable.topic_id, id)),
   ]);
 
-  const decisionIds = topicEvents
+  const mainEntries = allEntries.filter((e) => e.thread_id === null);
+  const mainEvents = allEvents.filter((e) => e.thread_id === null);
+
+  // Fuentes citadas por las decisiones del main (event_id → labels)
+  const decisionIds = mainEvents
     .filter((e) => e.type === "decision")
     .map((e) => e.id);
   const sources = decisionIds.length
@@ -70,21 +50,30 @@ export default async function TopicPage({
         .from(eventSourcesTable)
         .where(inArray(eventSourcesTable.event_id, decisionIds))
     : [];
-  const threadTitle = (threadId: string) =>
-    topicThreads.find((t) => t.id === threadId)?.title ?? "¿?";
+  const sourceLabels: Record<string, string[]> = {};
+  for (const s of sources) {
+    const label =
+      s.source_type === "thread"
+        ? (allThreads.find((t) => t.id === s.source_id)?.title ?? "¿?")
+        : "entry";
+    (sourceLabels[s.event_id] ??= []).push(label);
+  }
 
-  const items = [
-    ...mainEntries.map((e) => ({ kind: "entry" as const, date: e.created_at, entry: e })),
-    ...topicEvents.map((e) => ({ kind: "event" as const, date: e.created_at, event: e })),
-  ].sort((a, b) => a.date.localeCompare(b.date));
-
-  const parentThreads = topicThreads.filter((t) => t.parent_thread_id === null);
+  const topThreads = allThreads.filter((t) => t.parent_thread_id === null);
+  const subsOf = (threadId: string) =>
+    allThreads.filter((t) => t.parent_thread_id === threadId);
+  const entryCount = (threadId: string) =>
+    allEntries.filter((e) => e.thread_id === threadId).length;
+  const originAuthor = (originEntryId: string | null) =>
+    originEntryId
+      ? allEntries.find((e) => e.id === originEntryId)?.author_label
+      : undefined;
 
   return (
     <div className="flex flex-1 flex-col">
       <Topbar currentTopic={{ id: topic.id, title: topic.title }} />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-10">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold tracking-tight">{topic.title}</h1>
           <StateBadge state={topic.state} />
@@ -97,112 +86,39 @@ export default async function TopicPage({
             {topic.description}
           </p>
         )}
-        {parentThreads.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>
-              {parentThreads.length}{" "}
-              {parentThreads.length === 1 ? "thread" : "threads"}:
-            </span>
-            {parentThreads.map((t) => (
-              <Badge key={t.id} variant="outline" className="text-muted-foreground">
-                🧵 {t.title}
-              </Badge>
-            ))}
-            <span>· el board jerárquico llega en la Fase 2</span>
-          </div>
-        )}
 
         <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Main
         </h2>
-
-        {/* Gramática GitHub: ícono circular sobre un spine vertical + card */}
-        <div className="relative mt-4">
-          <div className="absolute bottom-4 left-[15px] top-4 w-px bg-border" />
-          <div className="flex flex-col gap-5">
-            {items.map((item) => {
-              if (item.kind === "entry") {
-                const e = item.entry;
-                return (
-                  <div key={`en-${e.id}`} className="flex gap-3">
-                    <span className="z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border border-add bg-add/15 text-sm text-add">
-                      ✎
-                    </span>
-                    <div className="min-w-0 flex-1 pt-0.5">
-                      <div className="text-sm">
-                        <b>{e.author_label}</b> escribió
-                        {e.edited_at && (
-                          <span className="text-xs text-muted-foreground"> · editado</span>
-                        )}
-                        <span className="float-right text-xs text-muted-foreground">
-                          {fmtDate(e.created_at)}
-                        </span>
-                      </div>
-                      <div className="mt-1.5 rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm">
-                        {e.body}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              const ev = item.event;
-              const p = JSON.parse(ev.payload) as EventPayload;
-              const evSources = sources.filter((s) => s.event_id === ev.id);
-              const meta: Record<string, { icon: string; className: string; label: string }> = {
-                created: { icon: "◉", className: "border-border bg-muted text-foreground", label: "Topic creado" },
-                shipped: { icon: "★", className: "border-border bg-muted text-foreground", label: `Shipped ${p.version ?? ""}` },
-                snoozed: { icon: "☾", className: "border-border bg-muted text-muted-foreground", label: "Snoozed" },
-                awakened: { icon: "☀", className: "border-border bg-muted text-foreground", label: "Despertó" },
-                reactivated: { icon: "▶", className: "border-add bg-add/15 text-add", label: "Reactivado" },
-                archived: { icon: "▣", className: "border-border bg-muted text-muted-foreground", label: `Archivado${p.reason ? ` · motivo: ${p.reason}` : ""}` },
-                decision: { icon: "✓", className: "border-foreground bg-card text-foreground", label: "Decisión" },
-                converged_into: { icon: "⇥", className: "border-merge bg-merge/15 text-merge", label: "Convergió" },
-                converged_from: { icon: "⇤", className: "border-merge bg-merge/15 text-merge", label: "Recibió convergencia" },
-              };
-              const m = meta[ev.type];
-              return (
-                <div key={`ev-${ev.id}`} className="flex gap-3">
-                  <span
-                    className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border text-sm ${m.className}`}
-                  >
-                    {m.icon}
-                  </span>
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="text-sm">
-                      <b>{m.label}</b>
-                      <span className="float-right text-xs text-muted-foreground">
-                        {fmtDate(ev.created_at)}
-                      </span>
-                    </div>
-                    {ev.type === "decision" && (
-                      <div className="mt-1.5 rounded-lg border-2 border-foreground/70 bg-card px-3.5 py-2.5">
-                        <div className="text-sm font-bold">{p.title}</div>
-                        {p.text && (
-                          <div className="mt-1 text-sm text-muted-foreground">{p.text}</div>
-                        )}
-                        {evSources.length > 0 && (
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                            <span className="text-muted-foreground">fuentes:</span>
-                            {evSources.map((s) => (
-                              <span
-                                key={s.id}
-                                className="rounded-full border border-src px-2 py-0.5 font-medium text-src"
-                              >
-                                ◆ {s.source_type === "thread" ? threadTitle(s.source_id) : "entry"}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="mt-4">
+          <Feed
+            entries={mainEntries}
+            events={mainEvents}
+            sourceLabels={sourceLabels}
+            entryFooter={(e) => (
+              <details className="mt-1.5">
+                <summary className="cursor-pointer text-xs font-medium text-merge">
+                  ⑂ Crear thread desde esta entry
+                </summary>
+                <form action={createThreadAction} className="mt-2 flex gap-2">
+                  <input type="hidden" name="topic_id" value={topic.id} />
+                  <input type="hidden" name="origin_entry_id" value={e.id} />
+                  <Input
+                    name="title"
+                    required
+                    placeholder="Título del thread (el debate que se abre acá)…"
+                    className="h-8 text-sm"
+                  />
+                  <Button type="submit" size="sm" variant="outline">
+                    Crear
+                  </Button>
+                </form>
+              </details>
+            )}
+          />
         </div>
 
-        {/* Agregar entry al main; author_label editable para citar gente */}
+        {/* Agregar entry al main */}
         <form
           action={addEntryAction}
           className="mt-8 rounded-lg border border-border bg-card p-4"
@@ -234,6 +150,104 @@ export default async function TopicPage({
             </Button>
           </div>
         </form>
+
+        {/* Threads: columnas, cada una un feed propio que crece hacia abajo */}
+        <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Threads
+        </h2>
+        {topThreads.length === 0 ? (
+          <div className="mt-4 rounded-lg border border-border bg-card px-6 py-8 text-center text-sm text-muted-foreground">
+            Este topic todavía no se ramificó. Cuando un debate no pueda
+            convivir en el main, creá un thread desde su entry (⑂).
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {topThreads.map((t) => {
+              const author = originAuthor(t.origin_entry_id);
+              const subs = subsOf(t.id);
+              return (
+                <div key={t.id} className="flex flex-col">
+                  <div className="text-xs text-muted-foreground">
+                    <span className="mr-1 inline-flex size-6 items-center justify-center rounded-full border border-merge bg-merge/15 text-merge">
+                      ⑂
+                    </span>
+                    {author ? (
+                      <>
+                        <b className="text-foreground">Thread</b> desde una entry
+                        de {author}
+                      </>
+                    ) : (
+                      <b className="text-foreground">Thread</b>
+                    )}
+                    <span className="float-right pt-1">{fmtDate(t.created_at)}</span>
+                  </div>
+                  <div className="mt-2 flex-1 rounded-lg border border-border bg-card p-3.5">
+                    <div className="text-sm font-bold">
+                      <Link
+                        href={`/topics/${topic.id}/threads/${t.id}`}
+                        className="hover:underline"
+                      >
+                        🧵 {t.title}
+                      </Link>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>
+                        <span className="font-semibold text-add">
+                          +{entryCount(t.id)}
+                        </span>{" "}
+                        entries
+                      </span>
+                      <StateBadge state={t.state} />
+                    </div>
+                    {subs.length > 0 && (
+                      <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                        {subs.map((s) => (
+                          <div
+                            key={s.id}
+                            className="rounded-md border border-border px-2.5 py-2 text-xs"
+                          >
+                            <Link
+                              href={`/topics/${topic.id}/threads/${s.id}`}
+                              className="font-semibold hover:underline"
+                            >
+                              ◦ {s.title}
+                            </Link>
+                            <span className="ml-2 text-muted-foreground">
+                              {entryCount(s.id)}{" "}
+                              {entryCount(s.id) === 1 ? "entry" : "entries"}
+                            </span>
+                            <span className="float-right">
+                              <StateBadge state={s.state} />
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Thread sin entry de origen ("creado por mí") */}
+        <details className="mt-4">
+          <summary className="cursor-pointer text-xs font-medium text-merge">
+            ⑂ Nuevo thread (sin entry de origen)
+          </summary>
+          <form action={createThreadAction} className="mt-2 flex max-w-md gap-2">
+            <input type="hidden" name="topic_id" value={topic.id} />
+            <Input
+              name="title"
+              required
+              placeholder="Título del thread…"
+              className="h-8 text-sm"
+            />
+            <Button type="submit" size="sm" variant="outline">
+              Crear
+            </Button>
+          </form>
+        </details>
       </main>
     </div>
   );

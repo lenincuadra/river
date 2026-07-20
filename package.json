@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "rm -f river.db river.db-wal river.db-shm && npm run db:push && npm run db:seed"
+    "db:reset": "npm run db:push && npm run db:seed"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

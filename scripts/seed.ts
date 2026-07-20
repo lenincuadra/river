@@ -10,8 +10,9 @@ import {
 } from "../db/schema";
 
 // Datos de ejemplo: el caso dark-mode con Martina (river-plan.md Fase 0,
-// espejando river-wireframe-board-v3.html). Corre con `npm run db:seed`
-// sobre una DB recién creada (`npm run db:reset` hace todo junto).
+// espejando river-wireframe-board-v3.html). Vacía las tablas y las repuebla
+// (no borra el archivo: un server corriendo ve los datos nuevos al instante,
+// y contra Turso no hay archivo que borrar). `npm run db:reset` = push + seed.
 
 const id = () => randomUUID();
 const at = (iso: string) => `${iso}:00.000Z`;
@@ -21,6 +22,20 @@ async function seed() {
   // inserción satisface las FKs, así que se apagan solo durante el seed.
   // (Turso puede no aceptar el pragma; ahí las FKs ya vienen desactivadas.)
   await client.execute("PRAGMA foreign_keys = OFF").catch(() => {});
+
+  // Empezar de cero: vaciar todas las tablas. El seed es la única excepción
+  // a la regla 1 (borra events): repuebla el caso de ejemplo completo.
+  for (const table of [
+    "event_sources",
+    "triggers",
+    "events",
+    "entry_revisions",
+    "entries",
+    "threads",
+    "topics",
+  ]) {
+    await client.execute(`DELETE FROM ${table}`);
+  }
 
   // --- IDs cruzados ---
   const topicId = id();

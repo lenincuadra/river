@@ -1,14 +1,15 @@
 import { isNull, eq } from "drizzle-orm";
 import { db } from "../db";
-import { entries, topics, events } from "../db/schema";
+import { entries, topics, threads, events } from "../db/schema";
 import {
   captureEntry,
   assignEntryToTopic,
   createTopicFromEntry,
+  createThread,
   deleteInboxEntry,
 } from "../db/mutations";
 
-// Smoke test de los flujos de Fase 1 contra la DB real.
+// Smoke test de los flujos de Fases 1 y 2 contra la DB real.
 // Deja datos de prueba: correr `npm run db:reset` después para limpiar.
 
 async function main() {
@@ -63,6 +64,67 @@ async function main() {
   await deleteInboxEntry(e3);
   const gone = await db.select().from(entries).where(eq(entries.id, e3));
   console.log("6) borrar en inbox:", gone.length === 0 ? "OK" : "FALLO");
+
+  // --- Fase 2: el caso "Martina trae dos debates en un mensaje" ---
+  const eMartina = await captureEntry({
+    body: "Martina: el buscador no encuentra acentos, y ¿podría buscar también en archivados?",
+    topicId: darkMode.id,
+    authorLabel: "Martina",
+  });
+  const th1 = await createThread({
+    topicId: darkMode.id,
+    title: "acentos en búsqueda",
+    originEntryId: eMartina,
+  });
+  const th2 = await createThread({
+    topicId: darkMode.id,
+    title: "buscar en archivados",
+    originEntryId: eMartina,
+  });
+  const [row1] = await db.select().from(threads).where(eq(threads.id, th1));
+  const [row2] = await db.select().from(threads).where(eq(threads.id, th2));
+  console.log(
+    "7) una entry partida en dos threads:",
+    row1.origin_entry_id === eMartina && row2.origin_entry_id === eMartina
+      ? "OK"
+      : "FALLO"
+  );
+
+  // Entry dentro de un thread (el topic se deduce del thread)
+  const eInThread = await captureEntry({
+    body: "Prueba: normalizar con unaccent",
+    threadId: th1,
+  });
+  const [inThread] = await db.select().from(entries).where(eq(entries.id, eInThread));
+  console.log(
+    "8) entry dentro del thread:",
+    inThread.thread_id === th1 && inThread.topic_id === darkMode.id ? "OK" : "FALLO"
+  );
+
+  // Subthread (nivel 2) OK; sub-subthread (nivel 3) debe rechazarse
+  const sub = await createThread({
+    topicId: darkMode.id,
+    title: "solo tildes, no eñes",
+    parentThreadId: th1,
+  });
+  console.log("9) subthread creado OK");
+  try {
+    await createThread({
+      topicId: darkMode.id,
+      title: "no debería existir",
+      parentThreadId: sub,
+    });
+    console.log("10) FALLO: dejó crear un nivel 3");
+  } catch (err) {
+    console.log("10) profundidad máx 2 validada OK:", (err as Error).message);
+  }
+
+  // Evento created estampado para los threads nuevos
+  const thEvents = await db.select().from(events).where(eq(events.thread_id, th1));
+  console.log(
+    "11) evento created del thread:",
+    thEvents.some((e) => e.type === "created") ? "OK" : "FALLO"
+  );
 }
 
 main()
