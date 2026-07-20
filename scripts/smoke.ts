@@ -1,6 +1,6 @@
 import { isNull, eq } from "drizzle-orm";
 import { db } from "../db";
-import { entries, topics, threads, events } from "../db/schema";
+import { entries, topics, threads, events, triggers } from "../db/schema";
 import {
   captureEntry,
   assignEntryToTopic,
@@ -9,9 +9,12 @@ import {
   deleteInboxEntry,
   archiveTarget,
   reactivateTarget,
+  snoozeTarget,
+  resolveTrigger,
+  pendingTriggerFor,
 } from "../db/mutations";
 
-// Smoke test de los flujos de Fases 1, 2 y 3 contra la DB real.
+// Smoke test de los flujos de Fases 1 a 4 contra la DB real.
 // Deja datos de prueba: correr `npm run db:reset` después para limpiar.
 
 async function main() {
@@ -186,6 +189,86 @@ async function main() {
       ? "OK"
       : "FALLO"
   );
+
+  // --- Fase 4: disparadores y Reentry ---
+
+  // Snooze con disparador de fecha (pasado, para probar Reentry ya mismo)
+  await snoozeTarget({
+    targetType: "thread",
+    id: th1,
+    trigger: { kind: "date", fireDate: "2020-01-01T00:00:00.000Z" },
+  });
+  const [snoozedTh] = await db.select().from(threads).where(eq(threads.id, th1));
+  const trig1 = await pendingTriggerFor("thread", th1);
+  console.log(
+    "16) snooze con fecha:",
+    snoozedTh.state === "snoozed" && trig1?.kind === "date" ? "OK" : "FALLO"
+  );
+
+  // Snooze sin motivo/valor debe rechazarse (fecha vacía)
+  try {
+    await snoozeTarget({
+      targetType: "thread",
+      id: sub,
+      trigger: { kind: "date", fireDate: "" },
+    });
+    console.log("17) FALLO: dejó snoozear sin fecha");
+  } catch (err) {
+    console.log("17) snooze sin fecha bloqueado OK:", (err as Error).message);
+  }
+
+  // Reentry — salida 1: reactivar (el trigger pasa a fired)
+  await resolveTrigger({ triggerId: trig1!.id, action: "reactivate" });
+  const [reactivatedTh] = await db.select().from(threads).where(eq(threads.id, th1));
+  const [firedTrig1] = await db.select().from(triggers).where(eq(triggers.id, trig1!.id));
+  console.log(
+    "18) reentry → reactivar:",
+    reactivatedTh.state === "active" && firedTrig1.status === "fired" ? "OK" : "FALLO"
+  );
+
+  // Snooze con condición, luego Reentry — salida 2: re-dormir con nuevo disparador
+  await snoozeTarget({
+    targetType: "thread",
+    id: sub,
+    trigger: { kind: "condition", conditionText: "cuando cierre la Fase 4" },
+  });
+  const trig2 = await pendingTriggerFor("thread", sub);
+  await resolveTrigger({
+    triggerId: trig2!.id,
+    action: "resnooze",
+    trigger: { kind: "backlog" },
+  });
+  const [resnoozedSub] = await db.select().from(threads).where(eq(threads.id, sub));
+  const [firedTrig2] = await db.select().from(triggers).where(eq(triggers.id, trig2!.id));
+  const trig3 = await pendingTriggerFor("thread", sub);
+  console.log(
+    "19) reentry → re-dormir:",
+    resnoozedSub.state === "snoozed" &&
+      firedTrig2.status === "fired" &&
+      trig3?.kind === "backlog"
+      ? "OK"
+      : "FALLO"
+  );
+
+  // Reentry — salida 3: archivar (motivo obligatorio, igual que la Fase 3)
+  await resolveTrigger({
+    triggerId: trig3!.id,
+    action: "archive",
+    reason: "ya no aplica",
+  });
+  const [archivedSub] = await db.select().from(threads).where(eq(threads.id, sub));
+  console.log(
+    "20) reentry → archivar:",
+    archivedSub.state === "archived" ? "OK" : "FALLO"
+  );
+
+  // No se puede resolver dos veces el mismo trigger
+  try {
+    await resolveTrigger({ triggerId: trig1!.id, action: "reactivate" });
+    console.log("21) FALLO: dejó resolver un trigger ya resuelto");
+  } catch (err) {
+    console.log("21) trigger ya resuelto bloqueado OK:", (err as Error).message);
+  }
 }
 
 main()

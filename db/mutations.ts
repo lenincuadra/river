@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "./index";
-import { topics, threads, entries, events } from "./schema";
+import { topics, threads, entries, events, triggers } from "./schema";
 
 // Toda mutación pasa por acá: las reglas del sistema se validan en backend,
 // no solo en UI (CLAUDE.md). La tabla `events` solo recibe INSERT.
@@ -218,6 +218,106 @@ export async function reactivateTarget(input: {
     payload: JSON.stringify({ from: target.state }),
     created_at: now(),
   });
+}
+
+// --- Disparadores y Reentry (Fase 4). Snooze: elegir disparador → state =
+// snoozed → evento `snoozed` + fila en triggers (river-plan.md §4). ---
+
+export type TriggerInput =
+  | { kind: "date"; fireDate: string }
+  | { kind: "condition"; conditionText: string }
+  | { kind: "backlog" };
+
+function triggerEventPayload(trigger: TriggerInput) {
+  if (trigger.kind === "date") return { trigger: "date", fire_date: trigger.fireDate };
+  if (trigger.kind === "condition")
+    return { trigger: "condition", condition: trigger.conditionText };
+  return { trigger: "backlog" };
+}
+
+export async function snoozeTarget(input: {
+  targetType: TargetType;
+  id: string;
+  trigger: TriggerInput;
+}) {
+  if (input.trigger.kind === "date" && !input.trigger.fireDate)
+    throw new Error("La fecha del disparador es obligatoria.");
+  if (input.trigger.kind === "condition" && !input.trigger.conditionText.trim())
+    throw new Error("El texto de la condición es obligatorio.");
+
+  const target = await getTarget(input.targetType, input.id);
+  if (target.state === "archived")
+    throw new Error("Un archived no se snoozea directamente: reactivalo primero.");
+
+  await setState(input.targetType, input.id, "snoozed");
+  await db.insert(events).values({
+    id: randomUUID(),
+    topic_id: target.topicId,
+    thread_id: target.threadId,
+    type: "snoozed",
+    payload: JSON.stringify(triggerEventPayload(input.trigger)),
+    created_at: now(),
+  });
+  await db.insert(triggers).values({
+    id: randomUUID(),
+    target_type: input.targetType,
+    target_id: input.id,
+    kind: input.trigger.kind,
+    fire_date: input.trigger.kind === "date" ? input.trigger.fireDate : null,
+    condition_text:
+      input.trigger.kind === "condition" ? input.trigger.conditionText.trim() : null,
+    status: "pending",
+    created_at: now(),
+  });
+}
+
+export async function pendingTriggerFor(targetType: TargetType, id: string) {
+  const [trigger] = await db
+    .select()
+    .from(triggers)
+    .where(
+      and(
+        eq(triggers.target_type, targetType),
+        eq(triggers.target_id, id),
+        eq(triggers.status, "pending")
+      )
+    );
+  return trigger;
+}
+
+export async function allPendingTriggers() {
+  return db.select().from(triggers).where(eq(triggers.status, "pending"));
+}
+
+// Reentry: el momento en que un disparador se cumple. Los de fecha los
+// chequea la app sola (vencidos = radar de hoy); los de condición y backlog
+// los dispara el usuario cuando decide revisarlos. Misma resolución de
+// 3 salidas para los tres (river-plan.md §4).
+export async function resolveTrigger(
+  input:
+    | { triggerId: string; action: "reactivate" }
+    | { triggerId: string; action: "archive"; reason: string }
+    | { triggerId: string; action: "resnooze"; trigger: TriggerInput }
+) {
+  const [trigger] = await db
+    .select()
+    .from(triggers)
+    .where(eq(triggers.id, input.triggerId));
+  if (!trigger) throw new Error("El disparador no existe.");
+  if (trigger.status !== "pending")
+    throw new Error("Este disparador ya fue resuelto.");
+
+  const targetType = trigger.target_type as TargetType;
+  if (input.action === "reactivate") {
+    await reactivateTarget({ targetType, id: trigger.target_id });
+  } else if (input.action === "archive") {
+    await archiveTarget({ targetType, id: trigger.target_id, reason: input.reason });
+  } else {
+    await snoozeTarget({ targetType, id: trigger.target_id, trigger: input.trigger });
+  }
+
+  // El trigger resuelto pasa a fired, se haya elegido la salida que se haya elegido.
+  await db.update(triggers).set({ status: "fired" }).where(eq(triggers.id, trigger.id));
 }
 
 // Regla 2: borrar solo mientras la entry está en el inbox,

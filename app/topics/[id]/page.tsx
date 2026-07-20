@@ -10,6 +10,7 @@ import {
   eventSources as eventSourcesTable,
 } from "@/db/schema";
 import { addEntryAction, createThreadAction } from "@/app/actions";
+import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
@@ -32,10 +33,11 @@ export default async function TopicPage({
     .where(eq(topicsTable.id, id));
   if (!topic) notFound();
 
-  const [allEntries, allEvents, allThreads] = await Promise.all([
+  const [allEntries, allEvents, allThreads, topicTrigger] = await Promise.all([
     db.select().from(entriesTable).where(eq(entriesTable.topic_id, id)),
     db.select().from(eventsTable).where(eq(eventsTable.topic_id, id)),
     db.select().from(threadsTable).where(eq(threadsTable.topic_id, id)),
+    pendingTriggerFor("topic", id),
   ]);
 
   const mainEntries = allEntries.filter((e) => e.thread_id === null);
@@ -92,6 +94,7 @@ export default async function TopicPage({
           targetId={topic.id}
           state={topic.state}
           archivedReason={lastArchivedReason(mainEvents)}
+          pendingTrigger={topicTrigger}
         />
 
         <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">

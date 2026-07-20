@@ -416,7 +416,7 @@ async function seed() {
       topic_id: topicId,
       thread_id: tAutoNoche,
       type: "snoozed",
-      payload: JSON.stringify({ trigger: "date", fire_date: "2027-01-18" }),
+      payload: JSON.stringify({ trigger: "date", fire_date: "2026-07-19" }),
       created_at: at("2026-07-18T15:30"),
     },
   ]);
@@ -438,13 +438,15 @@ async function seed() {
   ]);
 
   // --- Disparadores pendientes ---
+  // El de auto-noche queda vencido a propósito (respecto a "hoy"): así se ve
+  // la interpelación de Reentry funcionando apenas se abre la app.
   await db.insert(triggers).values([
     {
       id: id(),
       target_type: "thread",
       target_id: tAutoNoche,
       kind: "date",
-      fire_date: at("2027-01-18T09:00"),
+      fire_date: at("2026-07-19T09:00"),
       status: "pending",
       created_at: at("2026-07-18T15:30"),
     },

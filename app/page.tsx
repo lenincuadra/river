@@ -6,6 +6,8 @@ import {
   entries as entriesTable,
   events as eventsTable,
 } from "@/db/schema";
+import { allPendingTriggers } from "@/db/mutations";
+import { isDue } from "@/lib/triggers";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { Badge } from "@/components/ui/badge";
@@ -28,12 +30,14 @@ function monthYear(iso: string) {
 }
 
 export default async function Home() {
-  const [topics, threads, entries, events] = await Promise.all([
+  const [topics, threads, entries, events, pendingTriggers] = await Promise.all([
     db.select().from(topicsTable),
     db.select().from(threadsTable),
     db.select().from(entriesTable),
     db.select().from(eventsTable),
+    allPendingTriggers(),
   ]);
+  const dueCount = pendingTriggers.filter(isDue).length;
 
   const STATE_ORDER = { active: 0, snoozed: 1, archived: 2 } as const;
   const rows = topics
@@ -64,6 +68,23 @@ export default async function Home() {
       <Topbar />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
+        {/* Interpelación de Reentry al abrir la app: lo que hoy venció */}
+        {dueCount > 0 && (
+          <Link
+            href="/reentry"
+            className="mb-6 flex items-center gap-3 rounded-lg border border-src bg-src/10 px-4 py-3 text-sm hover:bg-src/15"
+          >
+            <span className="text-lg">⏰</span>
+            <span>
+              <b>
+                {dueCount} {dueCount === 1 ? "tema despertó" : "temas despertaron"}
+              </b>{" "}
+              hoy — ¿siguen teniendo sentido?
+            </span>
+            <span className="ml-auto font-semibold text-src">Revisar →</span>
+          </Link>
+        )}
+
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold tracking-tight">Topics</h1>
           <div className="flex-1" />

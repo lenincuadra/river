@@ -11,9 +11,30 @@ import {
   deleteInboxEntry,
   archiveTarget,
   reactivateTarget,
+  snoozeTarget,
+  resolveTrigger,
+  type TriggerInput,
 } from "@/db/mutations";
 
 const refresh = () => revalidatePath("/", "layout");
+
+// Fecha del <input type="date"> a ISO; el resto de los campos del disparador
+// comparten estos mismos nombres en cualquier form que use <TriggerFields>.
+function triggerFromForm(formData: FormData): TriggerInput | null {
+  const kind = String(formData.get("kind") ?? "");
+  if (kind === "date") {
+    const raw = String(formData.get("fire_date") ?? "");
+    if (!raw) return null;
+    return { kind: "date", fireDate: new Date(raw).toISOString() };
+  }
+  if (kind === "condition") {
+    const text = String(formData.get("condition_text") ?? "").trim();
+    if (!text) return null;
+    return { kind: "condition", conditionText: text };
+  }
+  if (kind === "backlog") return { kind: "backlog" };
+  return null;
+}
 
 export async function captureAction(formData: FormData) {
   const body = String(formData.get("body") ?? "").trim();
@@ -112,5 +133,35 @@ export async function reactivateAction(formData: FormData) {
     targetType: formData.get("target_type") === "thread" ? "thread" : "topic",
     id: String(formData.get("target_id")),
   });
+  refresh();
+}
+
+export async function snoozeAction(formData: FormData) {
+  const trigger = triggerFromForm(formData);
+  if (!trigger) return; // la UI ya exige el campo del disparador elegido
+  await snoozeTarget({
+    targetType: formData.get("target_type") === "thread" ? "thread" : "topic",
+    id: String(formData.get("target_id")),
+    trigger,
+  });
+  refresh();
+}
+
+// Resolución de Reentry: reactivar, re-dormir o archivar (con motivo).
+// Usada tanto desde /reentry (vencidos hoy) como desde /triggers (radar).
+export async function resolveTriggerAction(formData: FormData) {
+  const triggerId = String(formData.get("trigger_id"));
+  const action = String(formData.get("action"));
+  if (action === "reactivate") {
+    await resolveTrigger({ triggerId, action: "reactivate" });
+  } else if (action === "archive") {
+    const reason = String(formData.get("reason") ?? "").trim();
+    if (!reason) return;
+    await resolveTrigger({ triggerId, action: "archive", reason });
+  } else if (action === "resnooze") {
+    const trigger = triggerFromForm(formData);
+    if (!trigger) return;
+    await resolveTrigger({ triggerId, action: "resnooze", trigger });
+  }
   refresh();
 }

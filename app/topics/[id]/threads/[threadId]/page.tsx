@@ -9,6 +9,7 @@ import {
   events as eventsTable,
 } from "@/db/schema";
 import { addThreadEntryAction, createThreadAction } from "@/app/actions";
+import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
@@ -31,12 +32,13 @@ export default async function ThreadPage({
     .where(eq(threadsTable.id, threadId));
   if (!thread || thread.topic_id !== id) notFound();
 
-  const [[topic], threadEntries, threadEvents, topicThreads] =
+  const [[topic], threadEntries, threadEvents, topicThreads, threadTrigger] =
     await Promise.all([
       db.select().from(topicsTable).where(eq(topicsTable.id, id)),
       db.select().from(entriesTable).where(eq(entriesTable.thread_id, threadId)),
       db.select().from(eventsTable).where(eq(eventsTable.thread_id, threadId)),
       db.select().from(threadsTable).where(eq(threadsTable.topic_id, id)),
+      pendingTriggerFor("thread", threadId),
     ]);
   if (!topic) notFound();
 
@@ -99,6 +101,7 @@ export default async function ThreadPage({
           targetId={thread.id}
           state={thread.state}
           archivedReason={lastArchivedReason(threadEvents)}
+          pendingTrigger={threadTrigger}
         />
 
         <div className="mt-6">
