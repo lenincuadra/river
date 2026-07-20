@@ -9,7 +9,7 @@ import { CaptureInput } from "./capture-input";
 import { TopicSwitcher } from "./topic-switcher";
 
 // Topbar del wireframe: logo, captura como input principal, inbox con badge,
-// búsqueda plegada (llega en Fase 6) y el switcher de topic a la derecha.
+// búsqueda plegada a un botón (Fase 6) y el switcher de topic a la derecha.
 // El radar (⏰) suma la Fase 4: cuenta lo dormido, resaltado si algo venció.
 export async function Topbar({
   currentTopic,
@@ -37,6 +37,11 @@ export async function Topbar({
       {/* key: al cambiar de topic se remonta y el chip de destino vuelve a aparecer */}
       <CaptureInput key={currentTopic?.id ?? "none"} topic={currentTopic ?? null} />
       <div className="flex-1" />
+      <Link href="/search" aria-label="Buscar" title="Buscar">
+        <Badge variant="outline" className="text-muted-foreground">
+          🔍 <span className="max-sm:hidden">Buscar</span>
+        </Badge>
+      </Link>
       <Link href="/triggers">
         <Badge
           variant="outline"

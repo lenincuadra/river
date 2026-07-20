@@ -30,7 +30,26 @@ function monthYear(iso: string) {
   }).format(new Date(iso));
 }
 
-export default async function Home() {
+type StateKey = "active" | "snoozed" | "archived";
+const FILTERS: Array<{ key: StateKey | "all"; label: string }> = [
+  { key: "all", label: "Todos" },
+  { key: "active", label: "Activos" },
+  { key: "snoozed", label: "Dormidos" },
+  { key: "archived", label: "Archivados" },
+];
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ state?: string }>;
+}) {
+  const { state } = await searchParams;
+  const stateFilter: StateKey | "all" = (
+    ["active", "snoozed", "archived"] as const
+  ).includes(state as StateKey)
+    ? (state as StateKey)
+    : "all";
+
   const [topics, threads, entries, events, pendingTriggers] = await Promise.all([
     db.select().from(topicsTable),
     db.select().from(threadsTable),
@@ -40,8 +59,16 @@ export default async function Home() {
   ]);
   const dueCount = pendingTriggers.filter(isDue).length;
 
+  const counts = {
+    all: topics.length,
+    active: topics.filter((t) => t.state === "active").length,
+    snoozed: topics.filter((t) => t.state === "snoozed").length,
+    archived: topics.filter((t) => t.state === "archived").length,
+  };
+
   const STATE_ORDER = { active: 0, snoozed: 1, archived: 2 } as const;
   const rows = topics
+    .filter((t) => stateFilter === "all" || t.state === stateFilter)
     .sort(
       (a, b) =>
         STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
@@ -105,6 +132,12 @@ export default async function Home() {
           <h1 className="text-xl font-bold tracking-tight">Topics</h1>
           <div className="flex-1" />
           <Link
+            href="/shipped"
+            className={buttonVariants({ size: "sm", variant: "ghost" })}
+          >
+            ★ Versiones
+          </Link>
+          <Link
             href="/topics/new"
             className={buttonVariants({ size: "sm", variant: "outline" })}
           >
@@ -115,6 +148,32 @@ export default async function Home() {
           Cada topic es una línea de vida: su historial solo crece, nunca se
           reescribe.
         </p>
+
+        {/* Filtros por estado (Fase 6): responden "¿qué hago con esto ahora?" */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {FILTERS.map(({ key, label }) => {
+            const active = stateFilter === key;
+            return (
+              <Link
+                key={key}
+                href={key === "all" ? "/" : `/?state=${key}`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                  active
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label} · {counts[key]}
+              </Link>
+            );
+          })}
+        </div>
+
+        {rows.length === 0 && (
+          <div className="mt-6 rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+            No hay topics en este estado.
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col gap-4">
           {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto }) => (
