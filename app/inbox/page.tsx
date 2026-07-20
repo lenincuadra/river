@@ -47,30 +47,7 @@ export default async function InboxPage() {
           nuevo, o borralas (solo acá se puede borrar).
         </p>
 
-        {inboxEntries.length === 0 ? (
-          <Empty className="mt-10 border border-dashed">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <Waves className="text-river" />
-              </EmptyMedia>
-              <EmptyTitle>Inbox vacío</EmptyTitle>
-              <EmptyDescription>
-                Capturá desde cualquier pantalla con <Kbd>⌘K</Kbd> — sin decidir
-                a dónde va. Después se procesa acá.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <Capture
-                trigger={<Button variant="outline" size="sm" />}
-                triggerLabel={
-                  <>
-                    <Plus /> Capturar al inbox
-                  </>
-                }
-              />
-            </EmptyContent>
-          </Empty>
-        ) : (
+        {inboxEntries.length > 0 && (
           <div className="mt-6 flex flex-col gap-4">
             {inboxEntries.map((entry) => (
               <Card key={entry.id}>
@@ -91,6 +68,35 @@ export default async function InboxPage() {
             ))}
           </div>
         )}
+
+        {/* El bloque de captura vive siempre debajo de los items (UI.md):
+            misma estructura, texto según contexto. */}
+        <Empty
+          className={`${inboxEntries.length === 0 ? "mt-10" : "mt-6"} border border-dashed`}
+        >
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Waves className="text-river" />
+            </EmptyMedia>
+            <EmptyTitle>
+              {inboxEntries.length === 0 ? "Inbox vacío" : "¿Apareció algo más?"}
+            </EmptyTitle>
+            <EmptyDescription>
+              Capturá desde cualquier pantalla con <Kbd>⌘K</Kbd> — sin decidir
+              a dónde va. Después se procesa acá.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Capture
+              trigger={<Button variant="outline" size="sm" />}
+              triggerLabel={
+                <>
+                  <Plus /> Capturar al inbox
+                </>
+              }
+            />
+          </EmptyContent>
+        </Empty>
       </main>
     </div>
   );

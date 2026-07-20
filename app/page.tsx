@@ -10,6 +10,7 @@ import {
 import { allPendingTriggers } from "@/db/mutations";
 import { isDue } from "@/lib/triggers";
 import { Topbar } from "@/components/topbar";
+import { CardLink } from "@/components/card-link";
 import { ConvergePanel } from "@/components/converge-panel";
 import { StateBadge } from "@/components/state-badge";
 import { Badge } from "@/components/ui/badge";
@@ -200,11 +201,7 @@ export default async function Home({
           {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto }) => (
             // Card entera clickeable (UI.md): link estirado + z en los links internos
             <Card key={topic.id} className="relative">
-              <Link
-                href={`/topics/${topic.id}`}
-                aria-label={topic.title}
-                className="absolute inset-0 rounded-xl"
-              />
+              <CardLink href={`/topics/${topic.id}`} label={topic.title} />
               <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle className="text-base">{topic.title}</CardTitle>

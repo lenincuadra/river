@@ -12,6 +12,7 @@ import {
 import { addThreadEntryAction, createThreadAction } from "@/app/actions";
 import { pendingTriggerFor } from "@/db/mutations";
 import { Topbar } from "@/components/topbar";
+import { CardLink } from "@/components/card-link";
 import { StateBadge } from "@/components/state-badge";
 import { StateActions } from "@/components/state-actions";
 import { FormDialog } from "@/components/form-dialog";
@@ -136,7 +137,7 @@ export default async function ThreadPage({
             tail={
               // Agregar entry: sigue en el timeline, la línea llega hasta acá
               <FeedActionRow
-                icon={<Pencil className="size-4" />}
+                icon={<Pencil className="size-3.5" />}
                 iconClassName="border-add/50 bg-add/10 text-add"
               >
                 <form
@@ -194,14 +195,15 @@ export default async function ThreadPage({
                 {subs.map((s) => (
                   <div
                     key={s.id}
-                    className="rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm"
+                    className="relative rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm"
                   >
-                    <Link
+                    <CardLink
                       href={`/topics/${topic.id}/threads/${s.id}`}
-                      className="inline-flex items-center gap-1 font-semibold hover:underline"
-                    >
+                      label={s.title}
+                    />
+                    <span className="inline-flex items-center gap-1 font-semibold">
                       <GitBranch className="size-3" /> {s.title}
-                    </Link>
+                    </span>
                     <span className="float-right">
                       <StateBadge state={s.state} />
                     </span>

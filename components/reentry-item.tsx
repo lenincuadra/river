@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Play, Moon, Archive } from "lucide-react";
 import { resolveTriggerAction } from "@/app/actions";
+import { CardLink } from "@/components/card-link";
 import { TriggerFields } from "@/components/trigger-fields";
 import { FormDialog } from "@/components/form-dialog";
 import { SubmitButton } from "@/components/submit-button";
@@ -85,7 +85,7 @@ export function ReentryItem({
   return (
     // Card entera clickeable (UI.md): las acciones quedan por encima del link
     <Card className="relative">
-      <Link href={href} aria-label={title} className="absolute inset-0 rounded-xl" />
+      <CardLink href={href} label={title} />
       <CardContent>
         <div className="text-xs text-muted-foreground">
           {breadcrumb}

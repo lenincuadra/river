@@ -22,7 +22,14 @@ del sistema en `CLAUDE.md`.
 5. **El contenido se ve donde está.** Las cards de threads muestran sus
    entries en la misma vista; abrir el thread sirve para aislarlo, no es la
    única forma de leerlo. El riel visual conecta los íconos de los threads
-   entre sí y con su card (la línea nunca queda cortada).
+   entre sí y con su card, y **la línea del main continúa hacia abajo hasta
+   ese riel**: el timeline es infinito, nunca queda cortado.
+5b. **Un solo ícono de timeline**: cuadrado `size-6` con bordes redondeados
+   (`TIMELINE_ICON` en `components/feed.tsx`), glifo `size-3.5` adentro.
+   Mismo tamaño y forma en el feed, el riel de threads y los CTAs.
+5c. **Los threads nunca se apilan**: siempre van al lado. Si no entran, la
+   fila es un carrusel (a cualquier tamaño de pantalla) y cierra con el CTA
+   de crear thread, del mismo tamaño que una card de thread.
 
 ## Acciones
 
@@ -37,8 +44,10 @@ del sistema en `CLAUDE.md`.
    (link estirado), no solo un texto con underline. Las acciones internas
    quedan por encima del link (`relative z-[1]`).
 10. Los empty states también accionan: ofrecen el siguiente paso como CTA
-    (capturar desde el inbox vacío, volver al inicio desde el radar
-    despejado, elegir Entry/Thread/Decisión en el compositor).
+    (capturar desde el inbox, volver al inicio desde el radar despejado,
+    elegir Entry/Thread/Decisión en el compositor). No desaparecen cuando
+    hay contenido: se quedan debajo de los items con texto contextual
+    (ej: el bloque de captura del inbox).
 
 ## Layout
 

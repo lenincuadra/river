@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { Star } from "lucide-react";
 import { db } from "@/db";
 import { topics as topicsTable, events as eventsTable } from "@/db/schema";
 import { Topbar } from "@/components/topbar";
+import { CardLink } from "@/components/card-link";
 import { fmtDate } from "@/components/feed";
 import {
   Empty,
@@ -83,22 +83,18 @@ export default async function ShippedPage() {
                     {items.length} {items.length === 1 ? "topic" : "topics"}
                   </span>
                 </div>
-                <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                <div className="mt-3 flex flex-col gap-2">
                   {items
                     .slice()
                     .sort((a, b) => b.at.localeCompare(a.at))
                     .map((it, i) => (
                       <div
                         key={`${it.topicId}-${i}`}
-                        className="flex items-center gap-2 text-sm"
+                        className="relative flex items-center gap-2 rounded-md border border-border px-2.5 py-2 text-sm"
                       >
+                        <CardLink href={`/topics/${it.topicId}`} label={it.title} />
                         <Star className="size-3.5 shrink-0 text-add" />
-                        <Link
-                          href={`/topics/${it.topicId}`}
-                          className="font-medium hover:underline"
-                        >
-                          {it.title}
-                        </Link>
+                        <span className="font-medium">{it.title}</span>
                         <span className="ml-auto text-xs text-muted-foreground">
                           {fmtDate(it.at)}
                         </span>

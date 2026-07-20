@@ -59,6 +59,11 @@ const EVENT_META: Record<
 // Fila extra al final del timeline con el mismo layout que un item del feed:
 // así la línea vertical continúa hasta las acciones (agregar entry, decidir)
 // en vez de cortarse antes de un bloque suelto.
+// Ícono del timeline (UI.md): tamaño y forma únicos en toda la app —
+// cuadrado size-6 con bordes redondeados, glifo size-3.5 adentro.
+export const TIMELINE_ICON =
+  "z-[1] flex size-6 shrink-0 items-center justify-center rounded-md border";
+
 export function FeedActionRow({
   icon,
   iconClassName = "border-border bg-muted text-muted-foreground",
@@ -70,12 +75,8 @@ export function FeedActionRow({
 }) {
   return (
     <div className="flex gap-3">
-      <span
-        className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${iconClassName}`}
-      >
-        {icon}
-      </span>
-      <div className="min-w-0 flex-1 pt-0.5">{children}</div>
+      <span className={`${TIMELINE_ICON} ${iconClassName}`}>{icon}</span>
+      <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
 }
@@ -109,7 +110,9 @@ export function Feed({
 
   return (
     <div className="relative">
-      <div className="absolute bottom-4 left-[15px] top-4 w-px bg-border" />
+      {/* La línea sigue hacia abajo (bottom-0): el timeline es infinito y
+          continúa en el riel de threads (UI.md). */}
+      <div className="absolute bottom-0 left-[11.5px] top-3 w-px bg-border" />
       <div className="flex flex-col gap-5">
         {items.map((item) => {
           if (item.kind === "entry") {
@@ -118,8 +121,8 @@ export function Feed({
             // acciones viven adentro, sin líneas divisorias (UI.md).
             return (
               <div key={`en-${e.id}`} className="flex gap-3">
-                <span className="z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border border-add bg-add/15 text-add">
-                  <ENTRY_ICON className="size-4" />
+                <span className={`${TIMELINE_ICON} border-add bg-add/15 text-add`}>
+                  <ENTRY_ICON className="size-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div
@@ -158,10 +161,8 @@ export function Feed({
           if (ev.type === "decision") {
             return (
               <div key={`ev-${ev.id}`} className="flex gap-3">
-                <span
-                  className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${meta.className}`}
-                >
-                  <Icon className="size-4" />
+                <span className={`${TIMELINE_ICON} ${meta.className}`}>
+                  <Icon className="size-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="rounded-lg border-2 border-foreground/70 bg-card px-3.5 py-2.5 text-sm">
@@ -197,10 +198,8 @@ export function Feed({
 
           return (
             <div key={`ev-${ev.id}`} className="flex gap-3">
-              <span
-                className={`z-[1] flex size-8 shrink-0 items-center justify-center rounded-full border ${meta.className}`}
-              >
-                <Icon className="size-4" />
+              <span className={`${TIMELINE_ICON} ${meta.className}`}>
+                <Icon className="size-3.5" />
               </span>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="text-sm">

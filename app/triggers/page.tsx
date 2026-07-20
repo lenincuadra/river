@@ -5,6 +5,7 @@ import { topics as topicsTable, threads as threadsTable } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
 import { isDue, targetInfo, triggerSummary, type Trigger } from "@/lib/triggers";
 import { Topbar } from "@/components/topbar";
+import { CardLink } from "@/components/card-link";
 import { ReentryItem, ResolveControls } from "@/components/reentry-item";
 import { fmtDate } from "@/components/feed";
 import { Badge } from "@/components/ui/badge";
@@ -118,11 +119,7 @@ function TriggerRow({
   return (
     // Card entera clickeable (UI.md): las acciones quedan por encima del link
     <Card className="relative">
-      <Link
-        href={info.href}
-        aria-label={info.title}
-        className="absolute inset-0 rounded-xl"
-      />
+      <CardLink href={info.href} label={info.title} />
       <CardContent>
         <div className="text-xs text-muted-foreground">
           {info.breadcrumb}
