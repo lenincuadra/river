@@ -91,7 +91,13 @@ export default async function TopicPage({
           {shippedVersion && (
             <Badge variant="secondary">★ Shipped {shippedVersion}</Badge>
           )}
-          <span className="ml-auto text-xs text-muted-foreground">
+          <Link
+            href={`/topics/${topic.id}/multiverse`}
+            className="ml-auto rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            ◇ Multiverso
+          </Link>
+          <span className="text-xs text-muted-foreground">
             desde {fmtDate(topic.created_at)}
           </span>
         </div>
