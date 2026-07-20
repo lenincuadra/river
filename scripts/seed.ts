@@ -562,7 +562,7 @@ async function seed() {
   ]);
 
   console.log(
-    "Seed listo: topic dark-mode (3 threads, 4 subthreads, 1 decisión, shipped v2.0), 2 entries en el inbox y una convergencia de ejemplo (onboarding + tour → flujo de alta)."
+    "River — datos de ejemplo cargados: topic dark-mode (3 threads, 4 subthreads, 1 decisión, shipped v2.0), 2 entries en el inbox y una convergencia de ejemplo (onboarding + tour → flujo de alta)."
   );
 }
 
