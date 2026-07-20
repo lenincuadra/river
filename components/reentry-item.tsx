@@ -83,7 +83,9 @@ export function ReentryItem({
   breadcrumb?: string;
 }) {
   return (
-    <Card>
+    // Card entera clickeable (UI.md): las acciones quedan por encima del link
+    <Card className="relative">
+      <Link href={href} aria-label={title} className="absolute inset-0 rounded-xl" />
       <CardContent>
         <div className="text-xs text-muted-foreground">
           {breadcrumb}
@@ -91,13 +93,11 @@ export function ReentryItem({
             {fmtDate(trigger.fire_date ?? trigger.created_at)}
           </span>
         </div>
-        <Link href={href} className="mt-0.5 block text-sm font-bold hover:underline">
-          {title}
-        </Link>
+        <div className="mt-0.5 text-sm font-bold">{title}</div>
         <p className="mt-2 text-sm text-muted-foreground">
           ¿Esto sigue teniendo sentido hoy?
         </p>
-        <div className="mt-3">
+        <div className="relative z-[1] mt-3">
           <ResolveControls trigger={trigger} />
         </div>
       </CardContent>

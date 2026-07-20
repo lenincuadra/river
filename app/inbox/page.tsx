@@ -1,13 +1,16 @@
 import { isNull } from "drizzle-orm";
-import { Inbox, Waves } from "lucide-react";
+import { Inbox, Plus, Waves } from "lucide-react";
 import { db } from "@/db";
 import { entries as entriesTable, topics as topicsTable } from "@/db/schema";
 import { Topbar } from "@/components/topbar";
 import { InboxEntryActions } from "@/components/inbox-entry-actions";
+import { Capture } from "@/components/capture";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Kbd } from "@/components/ui/kbd";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -56,6 +59,16 @@ export default async function InboxPage() {
                 a dónde va. Después se procesa acá.
               </EmptyDescription>
             </EmptyHeader>
+            <EmptyContent>
+              <Capture
+                trigger={<Button variant="outline" size="sm" />}
+                triggerLabel={
+                  <>
+                    <Plus /> Capturar al inbox
+                  </>
+                }
+              />
+            </EmptyContent>
           </Empty>
         ) : (
           <div className="mt-6 flex flex-col gap-4">

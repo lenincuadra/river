@@ -25,6 +25,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +93,12 @@ export default async function TopicPage({
     allThreads.filter((t) => t.parent_thread_id === threadId);
   const entryCount = (threadId: string) =>
     allEntries.filter((e) => e.thread_id === threadId).length;
+  // Las entries se ven en esta misma vista (UI.md): abrir el thread es la
+  // forma de aislarlo, no la única de leerlo.
+  const entriesOf = (threadId: string) =>
+    allEntries
+      .filter((e) => e.thread_id === threadId)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const originAuthor = (originEntryId: string | null) =>
     originEntryId
       ? allEntries.find((e) => e.id === originEntryId)?.author_label
@@ -118,12 +129,22 @@ export default async function TopicPage({
           {shippedVersion && (
             <Badge variant="secondary"><Star /> Shipped {shippedVersion}</Badge>
           )}
-          <Link
-            href={`/topics/${topic.id}/multiverse`}
-            className={`ml-auto ${buttonVariants({ variant: "outline", size: "sm" })} rounded-full text-muted-foreground`}
-          >
-            <Waypoints /> Multiverso
-          </Link>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Link
+                  href={`/topics/${topic.id}/multiverse`}
+                  className={`ml-auto ${buttonVariants({ variant: "outline", size: "sm" })} rounded-full text-muted-foreground`}
+                />
+              }
+            >
+              <Waypoints /> Línea de tiempo
+            </TooltipTrigger>
+            <TooltipContent>
+              Ver el topic completo en el tiempo: el main y cada thread como
+              líneas paralelas, con lo dormido en la zona futura
+            </TooltipContent>
+          </Tooltip>
           <span className="text-xs text-muted-foreground">
             desde {fmtDate(topic.created_at)}
           </span>
@@ -189,38 +210,48 @@ export default async function TopicPage({
           // Mobile: carrusel al borde del viewport (el -mx-5 anula el padding
           // del main y el px-5 interno alinea la primera card).
           <div className="mt-4 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 max-sm:-mx-5 max-sm:scroll-px-5 max-sm:px-5 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3">
-            {topThreads.map((t) => {
+            {topThreads.map((t, i) => {
               const author = originAuthor(t.origin_entry_id);
               const subs = subsOf(t.id);
+              const tEntries = entriesOf(t.id);
               return (
                 <div
                   key={t.id}
-                  className="flex w-[85%] shrink-0 snap-center flex-col sm:w-auto sm:shrink"
+                  className="relative flex w-[85%] shrink-0 snap-center flex-col sm:w-auto sm:shrink"
                 >
-                  <div className="text-xs text-muted-foreground">
-                    <span className="mr-1 inline-flex size-6 items-center justify-center rounded-full border border-merge bg-merge/15 text-merge">
-                      <GitBranch className="size-3.5" />
-                    </span>
-                    {author ? (
-                      <>
-                        <b className="text-foreground">Thread</b> desde una entry
-                        de {author}
-                      </>
-                    ) : (
+                  {/* Riel (wireframe): une este ícono con el del thread de la
+                      derecha, y baja del ícono hasta la card. */}
+                  {i < topThreads.length - 1 && (
+                    <span
+                      aria-hidden
+                      className="absolute -right-8 left-3 top-3 h-px bg-border"
+                    />
+                  )}
+                  <span
+                    aria-hidden
+                    className="absolute left-3 top-3 h-5 w-px bg-border"
+                  />
+                  <span className="relative z-[1] flex size-6 items-center justify-center rounded-full border border-merge bg-merge/15 text-merge">
+                    <GitBranch className="size-3.5" />
+                  </span>
+
+                  {/* Card entera clickeable; adentro va todo: qué es, de dónde
+                      viene, fecha, y sus entries a la vista. */}
+                  <div className="relative mt-2 flex-1 rounded-lg border border-border bg-card p-3.5">
+                    <Link
+                      href={`/topics/${topic.id}/threads/${t.id}`}
+                      aria-label={t.title}
+                      className="absolute inset-0 rounded-lg"
+                    />
+                    <div className="text-xs text-muted-foreground">
                       <b className="text-foreground">Thread</b>
-                    )}
-                    <span className="float-right pt-1">{fmtDate(t.created_at)}</span>
-                  </div>
-                  <div className="mt-2 flex-1 rounded-lg border border-border bg-card p-3.5">
-                    <div className="text-sm font-bold">
-                      <Link
-                        href={`/topics/${topic.id}/threads/${t.id}`}
-                        className="inline-flex items-center gap-1.5 hover:underline"
-                      >
-                        <GitBranch className="size-4" /> {t.title}
-                      </Link>
+                      {author && <> desde una entry de {author}</>}
+                      <span className="float-right">{fmtDate(t.created_at)}</span>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <div className="mt-1.5 flex items-center gap-1.5 text-sm font-bold">
+                      <GitBranch className="size-4" /> {t.title}
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span>
                         <span className="font-semibold text-add">
                           +{entryCount(t.id)}
@@ -229,19 +260,33 @@ export default async function TopicPage({
                       </span>
                       <StateBadge state={t.state} />
                     </div>
+                    {tEntries.length > 0 && (
+                      <div className="mt-3 flex flex-col gap-2">
+                        {tEntries.map((en) => (
+                          <div key={en.id} className="line-clamp-3 text-xs">
+                            <b>{en.author_label}</b>{" "}
+                            <span className="text-muted-foreground">
+                              {en.body}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {subs.length > 0 && (
-                      <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                      <div className="mt-3 flex flex-col gap-2">
                         {subs.map((s) => (
                           <div
                             key={s.id}
-                            className="rounded-md border border-border px-2.5 py-2 text-xs"
+                            className="relative z-[1] rounded-md border border-border bg-card px-2.5 py-2 text-xs"
                           >
                             <Link
                               href={`/topics/${topic.id}/threads/${s.id}`}
-                              className="inline-flex items-center gap-1 font-semibold hover:underline"
-                            >
+                              aria-label={s.title}
+                              className="absolute inset-0 rounded-md"
+                            />
+                            <span className="inline-flex items-center gap-1 font-semibold">
                               <GitBranch className="size-3" /> {s.title}
-                            </Link>
+                            </span>
                             <span className="ml-2 text-muted-foreground">
                               {entryCount(s.id)}{" "}
                               {entryCount(s.id) === 1 ? "entry" : "entries"}

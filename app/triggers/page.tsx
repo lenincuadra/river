@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Radar } from "lucide-react";
+import { House, Radar } from "lucide-react";
 import { db } from "@/db";
 import { topics as topicsTable, threads as threadsTable } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
@@ -8,9 +8,11 @@ import { Topbar } from "@/components/topbar";
 import { ReentryItem, ResolveControls } from "@/components/reentry-item";
 import { fmtDate } from "@/components/feed";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -61,6 +63,14 @@ export default async function TriggersPage() {
                 No hay nada snoozeado. Todo lo demás está activo o archivado.
               </EmptyDescription>
             </EmptyHeader>
+            <EmptyContent>
+              <Link
+                href="/"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <House /> Ir al inicio
+              </Link>
+            </EmptyContent>
           </Empty>
         ) : (
           <div className="mt-6 flex flex-col gap-4">
@@ -106,16 +116,20 @@ function TriggerRow({
   // No vencido: se puede revisar igual a mano (condición cumplida, backlog).
   // Las tres salidas quedan a la vista: dos son diálogos, no ocupan lugar.
   return (
-    <Card>
+    // Card entera clickeable (UI.md): las acciones quedan por encima del link
+    <Card className="relative">
+      <Link
+        href={info.href}
+        aria-label={info.title}
+        className="absolute inset-0 rounded-xl"
+      />
       <CardContent>
         <div className="text-xs text-muted-foreground">
           {info.breadcrumb}
           <span className="float-right">{fmtDate(trigger.created_at)}</span>
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-2">
-          <Link href={info.href} className="text-sm font-bold hover:underline">
-            {info.title}
-          </Link>
+          <span className="text-sm font-bold">{info.title}</span>
           <Badge variant="outline" className="text-muted-foreground">
             {KIND_LABEL[trigger.kind]}
           </Badge>
@@ -123,7 +137,7 @@ function TriggerRow({
         <p className="mt-1.5 text-sm text-muted-foreground">
           {triggerSummary(trigger, fmtDate)}
         </p>
-        <div className="mt-3">
+        <div className="relative z-[1] mt-3">
           <ResolveControls trigger={trigger} />
         </div>
       </CardContent>

@@ -259,7 +259,7 @@ export default async function MultiversePage({
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold tracking-tight">{topic.title}</h1>
           <StateBadge state={topic.state} />
-          <span className="text-sm text-muted-foreground">· Multiverso</span>
+          <span className="text-sm text-muted-foreground">· Línea de tiempo</span>
           <Link
             href={`/topics/${id}`}
             className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"

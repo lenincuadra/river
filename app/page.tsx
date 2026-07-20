@@ -198,14 +198,16 @@ export default async function Home({
 
         <div className="mt-6 flex flex-col gap-4">
           {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto }) => (
-            <Card key={topic.id}>
+            // Card entera clickeable (UI.md): link estirado + z en los links internos
+            <Card key={topic.id} className="relative">
+              <Link
+                href={`/topics/${topic.id}`}
+                aria-label={topic.title}
+                className="absolute inset-0 rounded-xl"
+              />
               <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle className="text-base">
-                    <Link href={`/topics/${topic.id}`} className="hover:underline">
-                      {topic.title}
-                    </Link>
-                  </CardTitle>
+                  <CardTitle className="text-base">{topic.title}</CardTitle>
                   <StateBadge state={topic.state} />
                   {shippedVersion && (
                     <Badge variant="secondary"><Star /> Shipped {shippedVersion}</Badge>
@@ -236,7 +238,7 @@ export default async function Home({
                   <div className="mt-2 text-xs">
                     <Link
                       href={`/topics/${convergedInto.into_topic_id}`}
-                      className="inline-flex items-center gap-1 font-medium text-merge hover:underline"
+                      className="relative z-[1] inline-flex items-center gap-1 font-medium text-merge hover:underline"
                     >
                       <Merge className="size-3.5" /> convergió en {convergedInto.into_title}
                     </Link>

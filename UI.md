@@ -19,26 +19,37 @@ del sistema en `CLAUDE.md`.
    selector; nunca se muestran dos formularios apilados.
 4. Los eventos que ya cuenta el encabezado no se repiten en el feed
    (ej: "Creado" — el "desde {fecha}" del título ya lo dice).
+5. **El contenido se ve donde está.** Las cards de threads muestran sus
+   entries en la misma vista; abrir el thread sirve para aislarlo, no es la
+   única forma de leerlo. El riel visual conecta los íconos de los threads
+   entre sí y con su card (la línea nunca queda cortada).
 
 ## Acciones
 
-5. **Las acciones de una misma cosa van juntas, en un solo lugar.** Nada de
+6. **Las acciones de una misma cosa van juntas, en un solo lugar.** Nada de
    botones repartidos por la página.
-6. **Si el espacio se achica, colapsan a un menú ⋯** (dropdown) en vez de
+7. **Si el espacio se achica, colapsan a un menú ⋯** (dropdown) en vez de
    apilarse o romper el layout. Los diálogos que abre el menú se controlan
    desde afuera para sobrevivir al cierre del menú.
-7. **Sin líneas divisorias dentro de las cards** para separar contenido de
+8. **Sin líneas divisorias dentro de las cards** para separar contenido de
    acciones: solo aportan ruido. La separación la da el espaciado.
+9. **Una card que lleva a algún lado se abre clickeando la card entera**
+   (link estirado), no solo un texto con underline. Las acciones internas
+   quedan por encima del link (`relative z-[1]`).
+10. Los empty states también accionan: ofrecen el siguiente paso como CTA
+    (capturar desde el inbox vacío, volver al inicio desde el radar
+    despejado, elegir Entry/Thread/Decisión en el compositor).
 
 ## Layout
 
-8. **Las vistas de lista (Inbox, Radar, Reentry) comparten anatomía**: mismo
-   ancho de página, fecha arriba a la derecha de cada card, acciones abajo.
-9. **En mobile, las colecciones horizontales son carrusel**: una card por
-   pantalla con la siguiente asomando, scroll-snap, y el corte en el **borde
-   del viewport** (sin padding que lo enmarque).
-10. Los formularios largos van en diálogos; la captura rápida y el compositor
-    del timeline son la excepción: siempre a un tecleo de distancia.
+11. **Las vistas de lista (Inbox, Radar, Reentry) comparten anatomía**: mismo
+    ancho de página, fecha arriba a la derecha de cada card, acciones abajo.
+12. **En mobile, las colecciones horizontales son carrusel**: una card por
+    pantalla con la siguiente asomando, scroll-snap, y el corte en el **borde
+    del viewport** (sin padding que lo enmarque).
+13. **La captura vive en un modal**, siempre a un ⌘K de distancia desde
+    cualquier pantalla; los demás formularios largos van en diálogos. El
+    compositor del timeline es la otra excepción: vive en la página.
 
 ## Sistema
 

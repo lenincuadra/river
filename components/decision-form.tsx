@@ -30,12 +30,19 @@ export function DecisionForm({
   topicId,
   threads,
   entries,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   topicId: string;
   threads: { id: string; title: string; sub: boolean }[];
   entries: { id: string; label: string }[];
+  // Controlado desde afuera (ej: CTA del composer) o con trigger propio.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const toggle = (value: string, checked: boolean) =>
@@ -57,9 +64,11 @@ export function DecisionForm({
         if (!o) reset();
       }}
     >
-      <DialogTrigger render={<Button size="sm" />}>
-        <Check /> Registrar decisión
-      </DialogTrigger>
+      {controlledOpen === undefined && (
+        <DialogTrigger render={<Button size="sm" />}>
+          <Check /> Registrar decisión
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Registrar una decisión</DialogTitle>

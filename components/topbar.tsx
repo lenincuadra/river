@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Radar, Inbox } from "lucide-react";
+import { Search, Radar, Inbox, Plus } from "lucide-react";
 import { db } from "@/db";
 import { entries, topics, threads, events } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
@@ -7,14 +7,15 @@ import { isDue, triggerSummary } from "@/lib/triggers";
 import { fmtRelative } from "@/lib/dates";
 import { fmtDate } from "@/components/feed";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CaptureInput } from "./capture-input";
+import { Capture } from "./capture";
 import { TopicSwitcher } from "./topic-switcher";
 
 // Topbar del wireframe: logo, captura como input principal, inbox con badge,
@@ -101,8 +102,22 @@ export async function Topbar({
         </span>
         <span className="max-sm:hidden">RIVER</span>
       </Link>
-      {/* key: al cambiar de topic se remonta y el chip de destino vuelve a aparecer */}
-      <CaptureInput key={currentTopic?.id ?? "none"} topic={currentTopic ?? null} />
+      {/* ⌘K abre el modal de captura; key: al cambiar de topic se remonta y
+          el chip de destino vuelve a aparecer */}
+      <Capture
+        key={currentTopic?.id ?? "none"}
+        hotkey
+        topic={currentTopic ?? null}
+        trigger={
+          <Button variant="outline" size="sm" className="text-muted-foreground" />
+        }
+        triggerLabel={
+          <>
+            <Plus /> <span className="max-md:hidden">Capturar rápido…</span>
+            <Kbd className="max-sm:hidden">⌘K</Kbd>
+          </>
+        }
+      />
       <div className="flex-1" />
 
       <Tooltip>
