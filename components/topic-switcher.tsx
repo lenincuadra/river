@@ -2,14 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  GitBranch,
-  Pencil,
-  Plus,
-} from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Pencil, Plus } from "lucide-react";
+import { ThreadIcon } from "@/lib/event-icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -66,7 +60,7 @@ export function TopicSwitcher({
         )}
       </span>
       <span className="ml-2 flex shrink-0 items-center gap-1 self-start pt-0.5 text-xs text-muted-foreground">
-        <GitBranch className="size-3 text-merge" /> {t.threads}
+        <ThreadIcon className="size-3 text-merge" /> {t.threads}
         <Pencil className="ml-1.5 size-3 text-add" /> {t.mainEntries}
       </span>
       {t.id === currentId && (

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { GitBranch, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { ThreadIcon } from "@/lib/event-icons";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -106,7 +107,7 @@ export default async function ThreadPage({
                     }
                     className="inline-flex items-center gap-1"
                   >
-                    <GitBranch className="size-3" /> {parent.title}
+                    <ThreadIcon className="size-3" /> {parent.title}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
               </>
@@ -120,7 +121,7 @@ export default async function ThreadPage({
 
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="inline-flex items-center gap-2 text-xl font-bold tracking-tight">
-            <GitBranch className={isSubthread ? "size-4" : "size-5"} /> {thread.title}
+            <ThreadIcon className={isSubthread ? "size-4" : "size-5"} /> {thread.title}
           </h1>
           <StateBadge state={thread.state} />
           <span className="ml-auto text-xs text-muted-foreground">
@@ -131,7 +132,7 @@ export default async function ThreadPage({
         {originEntry && (
           <div className="mt-3 rounded-lg border border-merge/40 bg-merge/10 px-3.5 py-2.5 text-sm">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-merge">
-              <GitBranch className="size-3.5" /> Creado desde una entry de {originEntry.author_label}:
+              <ThreadIcon className="size-3.5" /> Creado desde una entry de {originEntry.author_label}:
             </span>
             <p className="mt-1 text-muted-foreground">“{originEntry.body}”</p>
           </div>
@@ -153,7 +154,7 @@ export default async function ThreadPage({
               // acá es UNA cosa — entry, o subthread si aún puede ramificarse.
               <FeedActionRow
                 icon={<Plus className="size-3.5" />}
-                iconClassName="border-border bg-muted text-muted-foreground"
+                iconClassName="border-dashed border-border bg-muted text-muted-foreground"
               >
                 <ThreadComposer
                   topicId={topic.id}

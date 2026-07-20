@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, GitBranch, Pencil } from "lucide-react";
+import { Check, Pencil } from "lucide-react";
+import { ThreadIcon } from "@/lib/event-icons";
 import { createDecisionAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,7 +134,7 @@ export function DecisionForm({
                         checked={selected.has(value)}
                         onCheckedChange={(checked) => toggle(value, !!checked)}
                       />
-                      <GitBranch
+                      <ThreadIcon
                         className={`text-merge ${t.sub ? "size-3" : "size-3.5"}`}
                       />
                       {t.title}

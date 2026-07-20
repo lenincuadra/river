@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -11,11 +11,9 @@ import {
   Play,
   Archive,
   Check,
-  Merge,
-  GitBranch,
   Columns3,
-  type LucideIcon,
 } from "lucide-react";
+import { ThreadIcon, ConvergeIcon } from "@/lib/event-icons";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -40,18 +38,19 @@ type EventPayload = {
 
 // Íconos/colores por tipo de nodo (mismo mapa semántico que el feed vertical:
 // entry=verde, merge=morado, disparadores=rosa). Íconos Lucide.
-const MARK: Record<string, { Icon: LucideIcon; cls: string }> = {
-  entry: { Icon: Pencil, cls: "border-add bg-add/15 text-add" },
+type IconType = ComponentType<{ className?: string }>;
+const MARK: Record<string, { Icon: IconType; cls: string }> = {
+  entry: { Icon: Pencil, cls: "border-border bg-muted text-add" },
   created: { Icon: CircleDot, cls: "border-border bg-muted text-foreground" },
   shipped: { Icon: Star, cls: "border-border bg-muted text-foreground" },
   snoozed: { Icon: Moon, cls: "border-border bg-muted text-muted-foreground" },
   awakened: { Icon: Sun, cls: "border-border bg-muted text-foreground" },
-  reactivated: { Icon: Play, cls: "border-add bg-add/15 text-add" },
+  reactivated: { Icon: Play, cls: "border-border bg-muted text-add" },
   archived: { Icon: Archive, cls: "border-border bg-muted text-muted-foreground" },
-  decision: { Icon: Check, cls: "border-foreground bg-card text-foreground" },
-  converged_into: { Icon: Merge, cls: "border-merge bg-merge/15 text-merge" },
-  converged_from: { Icon: Merge, cls: "border-merge bg-merge/15 text-merge" },
-  trigger: { Icon: Moon, cls: "border-src bg-src/20 text-src" },
+  decision: { Icon: Check, cls: "border-border bg-muted text-foreground" },
+  converged_into: { Icon: ConvergeIcon, cls: "border-border bg-muted text-merge" },
+  converged_from: { Icon: ConvergeIcon, cls: "border-border bg-muted text-merge" },
+  trigger: { Icon: Moon, cls: "border-border bg-muted text-src" },
 };
 
 // La hora actual se lee en un helper (no en el cuerpo del componente): la
@@ -76,7 +75,7 @@ function eventLabel(type: string, p: EventPayload) {
   }
 }
 
-type LaneNode = { t: number; Icon: LucideIcon; cls: string; label: string };
+type LaneNode = { t: number; Icon: IconType; cls: string; label: string };
 type Lane = {
   key: string;
   kind: "main" | "thread" | "subthread";
@@ -196,7 +195,7 @@ export default async function MultiversePage({
     kind,
     title: (
       <span className="inline-flex items-center gap-1.5">
-        <GitBranch className={kind === "subthread" ? "size-3" : "size-3.5"} />
+        <ThreadIcon className={kind === "subthread" ? "size-3" : "size-3.5"} />
         {t.title}
       </span>
     ),
@@ -277,7 +276,7 @@ export default async function MultiversePage({
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1"><Pencil className="size-3 text-add" /> entry</span>
           <span className="inline-flex items-center gap-1"><Star className="size-3 text-foreground" /> shipped · <Check className="size-3 text-foreground" /> decisión</span>
-          <span className="inline-flex items-center gap-1"><GitBranch className="size-3 text-merge" /> rama · <Merge className="size-3 text-merge" /> convergió</span>
+          <span className="inline-flex items-center gap-1"><ThreadIcon className="size-3 text-merge" /> rama · <ConvergeIcon className="size-3 text-merge" /> convergió</span>
           <span className="inline-flex items-center gap-1"><Moon className="size-3 text-src" /> disparador (zona futuro)</span>
         </div>
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { AlarmClock, Star, Plus, Merge, ArrowRight, Waves } from "lucide-react";
+import { AlarmClock, Star, Plus, ArrowRight, Waves } from "lucide-react";
+import { ConvergeIcon } from "@/lib/event-icons";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -237,7 +238,7 @@ export default async function Home({
                       href={`/topics/${convergedInto.into_topic_id}`}
                       className="relative z-[1] inline-flex items-center gap-1 font-medium text-merge hover:underline"
                     >
-                      <Merge className="size-3.5" /> convergió en {convergedInto.into_title}
+                      <ConvergeIcon className="size-3.5" /> convergió en {convergedInto.into_title}
                     </Link>
                   </div>
                 )}

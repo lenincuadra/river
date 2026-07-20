@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Merge } from "lucide-react";
+import { ConvergeIcon } from "@/lib/event-icons";
 import { convergeAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,7 +72,7 @@ export function ConvergePanel({ topics }: { topics: Item[] }) {
       <DialogTrigger
         render={<Button variant="ghost" size="sm" className="text-merge" />}
       >
-        <Merge /> Convergir
+        <ConvergeIcon /> Convergir
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -172,7 +172,7 @@ export function ConvergePanel({ topics }: { topics: Item[] }) {
               Cancelar
             </DialogClose>
             <SubmitButton disabled={!enoughSources || !destOk}>
-              <Merge /> Convergir
+              <ConvergeIcon /> Convergir
             </SubmitButton>
           </DialogFooter>
         </form>

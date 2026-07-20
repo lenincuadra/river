@@ -201,7 +201,7 @@ export default async function TopicPage({
               // cosa — entry, decisión o thread (UI.md).
               <FeedActionRow
                 icon={<Plus className="size-3.5" />}
-                iconClassName="border-border bg-muted text-muted-foreground"
+                iconClassName="border-dashed border-border bg-muted text-muted-foreground"
               >
                 <MainComposer
                   topicId={topic.id}

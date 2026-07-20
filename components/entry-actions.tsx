@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Ellipsis, GitBranch, Pencil } from "lucide-react";
+import { Ellipsis, Pencil } from "lucide-react";
+import { ThreadIcon } from "@/lib/event-icons";
 import { createThreadAction, editEntryAction } from "@/app/actions";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export function EntryActions({
                 className="text-merge hover:text-merge"
                 onClick={() => setDialog("thread")}
               >
-                <GitBranch /> Crear thread
+                <ThreadIcon /> Crear thread
               </Button>
             </span>
             <span className="max-sm:hidden">
@@ -74,7 +75,7 @@ export function EntryActions({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setDialog("thread")}>
-                    <GitBranch className="text-merge" /> Crear thread
+                    <ThreadIcon className="text-merge" /> Crear thread
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setDialog("edit")}>
                     <Pencil /> Editar

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, GitBranch, Pencil, Waves } from "lucide-react";
+import { ChevronLeft, Pencil, Waves } from "lucide-react";
+import { ThreadIcon } from "@/lib/event-icons";
 import { addThreadEntryAction, createThreadAction } from "@/app/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ export function ThreadComposer({
                   size="sm"
                   onClick={() => setMode("subthread")}
                 >
-                  <GitBranch className="text-merge" /> Subthread
+                  <ThreadIcon className="text-merge" /> Subthread
                 </Button>
               )}
             </div>
@@ -146,7 +147,7 @@ export function ThreadComposer({
               </Field>
               <div className="mt-3 flex justify-end">
                 <SubmitButton size="sm">
-                  <GitBranch /> Crear subthread
+                  <ThreadIcon /> Crear subthread
                 </SubmitButton>
               </div>
             </form>

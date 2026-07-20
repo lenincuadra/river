@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { like, or } from "drizzle-orm";
-import { Search, GitBranch } from "lucide-react";
+import { Search } from "lucide-react";
+import { ThreadIcon } from "@/lib/event-icons";
 import { db } from "@/db";
 import {
   topics as topicsTable,
@@ -191,7 +192,7 @@ export default async function SearchPage({
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
-                        <GitBranch className={isSub ? "size-3" : "size-3.5"} /> {t.title}
+                        <ThreadIcon className={isSub ? "size-3" : "size-3.5"} /> {t.title}
                       </span>
                       <StateBadge state={t.state} />
                     </div>

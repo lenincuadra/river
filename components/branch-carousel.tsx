@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { GitBranch, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createThreadAction } from "@/app/actions";
 import { CardLink } from "@/components/card-link";
 import { StateBadge } from "@/components/state-badge";
 import { FormDialog } from "@/components/form-dialog";
+import { ThreadIcon } from "@/lib/event-icons";
 import { TIMELINE_ICON, fmtDate } from "@/components/feed";
 
 export type Branch = {
@@ -64,7 +65,10 @@ export function BranchCarousel({
       <h2 className="pl-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {heading}
       </h2>
-      <div className="mt-4 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 max-sm:-mx-5 max-sm:scroll-px-5 max-sm:px-5">
+      {/* Bleed a todos los viewports (UI.md): el carrusel corta contra el borde
+          del contenedor, sin gutter. El -mx-5 anula el px-5 del main y el px-5
+          interno alinea la primera card con el feed. */}
+      <div className="mt-4 -mx-5 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-px-5 px-5 pb-3">
         {branches.map((b) => (
           <div
             key={b.id}
@@ -81,13 +85,14 @@ export function BranchCarousel({
               className="absolute left-3 top-3 h-5 w-px bg-border"
             />
             <span
-              className={`${TIMELINE_ICON} relative border-merge bg-merge/15 text-merge`}
+              className={`${TIMELINE_ICON} relative border-border bg-muted text-merge`}
             >
-              <GitBranch className="size-3.5" />
+              <ThreadIcon className="size-3.5" />
             </span>
 
             {/* Card entera clickeable; adentro va todo: qué es, de dónde
-                viene, fecha, y sus entries a la vista. */}
+                viene, fecha, y sus entries a la vista. El ícono de thread ya
+                está en el chip de arriba (UI.md), no se repite en el título. */}
             <div className="relative mt-2 flex-1 rounded-lg border border-border bg-card p-3.5">
               <CardLink href={b.href} label={b.title} />
               <div className="text-xs text-muted-foreground">
@@ -95,9 +100,7 @@ export function BranchCarousel({
                 {b.origin && <> {b.origin}</>}
                 <span className="float-right">{fmtDate(b.createdAt)}</span>
               </div>
-              <div className="mt-1.5 flex items-center gap-1.5 text-sm font-bold">
-                <GitBranch className="size-4" /> {b.title}
-              </div>
+              <div className="mt-1.5 text-sm font-bold">{b.title}</div>
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span>
                   <span className="font-semibold text-add">
@@ -126,7 +129,7 @@ export function BranchCarousel({
                     >
                       <CardLink href={s.href} label={s.title} />
                       <span className="inline-flex items-center gap-1 font-semibold">
-                        <GitBranch className="size-3" /> {s.title}
+                        <ThreadIcon className="size-3" /> {s.title}
                       </span>
                       <span className="ml-2 text-muted-foreground">
                         {s.entryCount} {s.entryCount === 1 ? "entry" : "entries"}
@@ -146,8 +149,9 @@ export function BranchCarousel({
             que una card (UI.md §5c). */}
         <div className="relative flex w-[85%] shrink-0 snap-center flex-col sm:w-80 sm:snap-start">
           <span aria-hidden className="absolute left-3 top-3 h-5 w-px bg-border" />
+          {/* Chip del template con el mismo dash que la card que acompaña (UI.md). */}
           <span
-            className={`${TIMELINE_ICON} relative border-border bg-muted text-muted-foreground`}
+            className={`${TIMELINE_ICON} relative border-dashed border-border bg-muted text-muted-foreground`}
           >
             <Plus className="size-3.5" />
           </span>
@@ -161,7 +165,7 @@ export function BranchCarousel({
               }
               triggerLabel={
                 <>
-                  <GitBranch className="size-5 text-merge" />
+                  <ThreadIcon className="size-5 text-merge" />
                   <span className="text-sm font-semibold">{ctaLabel}</span>
                   <span className="text-xs">{ctaHint}</span>
                 </>

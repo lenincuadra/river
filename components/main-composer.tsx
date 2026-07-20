@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronLeft, GitBranch, Pencil, Waves } from "lucide-react";
+import { Check, ChevronLeft, Pencil, Waves } from "lucide-react";
+import { ThreadIcon } from "@/lib/event-icons";
 import { addEntryAction, createThreadAction } from "@/app/actions";
 import { DecisionForm } from "@/components/decision-form";
 import { SubmitButton } from "@/components/submit-button";
@@ -55,7 +56,7 @@ export function MainComposer({
                 <Pencil className="text-add" /> Entry
               </Button>
               <Button variant="outline" size="sm" onClick={() => setMode("thread")}>
-                <GitBranch className="text-merge" /> Thread
+                <ThreadIcon className="text-merge" /> Thread
               </Button>
               <Button variant="outline" size="sm" onClick={() => setMode("decision")}>
                 <Check /> Decisión
@@ -139,7 +140,7 @@ export function MainComposer({
               </Field>
               <div className="mt-3 flex justify-end">
                 <SubmitButton size="sm">
-                  <GitBranch /> Crear thread
+                  <ThreadIcon /> Crear thread
                 </SubmitButton>
               </div>
             </form>

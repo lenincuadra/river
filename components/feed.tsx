@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Diamond, Merge } from "lucide-react";
-import { EVENT_ICON, ENTRY_ICON } from "@/lib/event-icons";
+import { Diamond } from "lucide-react";
+import { EVENT_ICON, ENTRY_ICON, ConvergeIcon } from "@/lib/event-icons";
 import { EntryActions } from "@/components/entry-actions";
 import type { entries as entriesTable, events as eventsTable } from "@/db/schema";
 
@@ -49,11 +49,11 @@ const EVENT_META: Record<
   shipped: { className: "border-border bg-muted text-foreground", label: (p) => `Shipped ${p.version ?? ""}` },
   snoozed: { className: "border-border bg-muted text-muted-foreground", label: () => "Snoozed" },
   awakened: { className: "border-border bg-muted text-foreground", label: () => "Despertó" },
-  reactivated: { className: "border-add bg-add/15 text-add", label: () => "Reactivado" },
+  reactivated: { className: "border-border bg-muted text-add", label: () => "Reactivado" },
   archived: { className: "border-border bg-muted text-muted-foreground", label: (p) => `Archivado${p.reason ? ` · motivo: ${p.reason}` : ""}` },
-  decision: { className: "border-foreground bg-card text-foreground", label: () => "Decisión" },
-  converged_into: { className: "border-merge bg-merge/15 text-merge", label: () => "Convergió en" },
-  converged_from: { className: "border-merge bg-merge/15 text-merge", label: () => "Recibió la convergencia" },
+  decision: { className: "border-border bg-muted text-foreground", label: () => "Decisión" },
+  converged_into: { className: "border-border bg-muted text-merge", label: () => "Convergió en" },
+  converged_from: { className: "border-border bg-muted text-merge", label: () => "Recibió la convergencia" },
 };
 
 // Fila extra al final del timeline con el mismo layout que un item del feed:
@@ -121,7 +121,7 @@ export function Feed({
             // acciones viven adentro, sin líneas divisorias (UI.md).
             return (
               <div key={`en-${e.id}`} className="flex gap-3">
-                <span className={`${TIMELINE_ICON} border-add bg-add/15 text-add`}>
+                <span className={`${TIMELINE_ICON} border-border bg-muted text-add`}>
                   <ENTRY_ICON className="size-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -215,7 +215,7 @@ export function Feed({
                       href={`/topics/${p.into_topic_id}`}
                       className="inline-flex items-center gap-1 font-semibold text-merge hover:underline"
                     >
-                      <Merge className="size-3.5" /> {p.into_title}
+                      <ConvergeIcon className="size-3.5" /> {p.into_title}
                     </Link>
                   </div>
                 )}

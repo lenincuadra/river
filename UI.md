@@ -25,11 +25,20 @@ del sistema en `CLAUDE.md`.
    entre sí y con su card, y **la línea del main continúa hacia abajo hasta
    ese riel**: el timeline es infinito, nunca queda cortado.
 5b. **Un solo ícono de timeline**: cuadrado `size-6` con bordes redondeados
-   (`TIMELINE_ICON` en `components/feed.tsx`), glifo `size-3.5` adentro.
-   Mismo tamaño y forma en el feed, el riel de threads y los CTAs.
+   (`TIMELINE_ICON` en `components/feed.tsx`), glifo `size-3.5` adentro. Mismo
+   tamaño y forma en el feed, el riel y los CTAs. **Chips planos**: fondo
+   `bg-muted` sólido (nunca tintes translúcidos tipo `bg-add/15`); el color
+   semántico lo lleva el glifo (entry=verde, thread/merge=morado, etc.). El
+   chip del compositor (`+`) usa `border-dashed`, igual que la card-template
+   que acompaña. Los glifos de **thread y convergencia van espejados**
+   (`ThreadIcon`/`ConvergeIcon` en `lib/event-icons.tsx`, `-scale-x-100`) para
+   apuntar en la dirección en que las ramas nacen en la app; son la única
+   fuente de esos dos íconos — nunca `GitBranch`/`Merge` sueltos.
 5c. **Las ramificaciones nunca se apilan**: threads y subthreads siempre van
    al lado. Si no entran, la fila es un carrusel (a cualquier tamaño de
-   pantalla) que cierra con el CTA de crear, del mismo tamaño que una card.
+   pantalla) que corta a sangre contra el borde del contenedor —sin gutter,
+   igual en desktop y mobile— y cierra con el CTA de crear, del mismo tamaño
+   que una card.
    Los dos niveles comparten componente (`components/branch-carousel.tsx`) y
    compositor con la misma lógica (`main-composer.tsx` / `thread-composer.tsx`).
 
