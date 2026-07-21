@@ -5,6 +5,7 @@ import { CardLink } from "@/components/card-link";
 import { StateBadge } from "@/components/state-badge";
 import { FormDialog } from "@/components/form-dialog";
 import { ThreadIcon } from "@/lib/event-icons";
+import { FULL_BLEED } from "@/lib/utils";
 import { TIMELINE_ICON, fmtDate } from "@/components/feed";
 
 export type Branch = {
@@ -67,14 +68,13 @@ export function BranchCarousel({
       <h2 className="pl-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {heading}
       </h2>
-      {/* Bleed a todos los viewports (UI.md): el carrusel corta contra el borde
-          del contenedor, sin gutter. El -mx-5 anula el px-5 del main y el px-5
-          interno alinea la primera card con el feed. */}
-      <div className="mt-4 -mx-5 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-px-5 px-5 pb-3">
+      {/* Full-bleed a todo el viewport (UI.md §5c): el carrusel usa todo el
+          ancho, la primera card queda alineada con el feed. */}
+      <div className={`mt-4 flex gap-5 overflow-x-auto pb-3 ${FULL_BLEED}`}>
         {branches.map((b) => (
           <div
             key={b.id}
-            className="relative flex w-[85%] shrink-0 snap-center flex-col sm:w-80 sm:snap-start"
+            className="relative flex w-[85%] shrink-0 flex-col sm:w-80"
           >
             {/* Riel: une este ícono con el del vecino (o el CTA final) y
                 baja del ícono a la card. */}
@@ -149,7 +149,7 @@ export function BranchCarousel({
 
         {/* Cierre del carrusel: empty state para ramificar, del mismo tamaño
             que una card (UI.md §5c). */}
-        <div className="relative flex w-[85%] shrink-0 snap-center flex-col sm:w-80 sm:snap-start">
+        <div className="relative flex w-[85%] shrink-0 flex-col sm:w-80">
           <span aria-hidden className="absolute left-3 top-3 h-5 w-px bg-border" />
           {/* Chip del template con el mismo dash que la card que acompaña (UI.md). */}
           <span

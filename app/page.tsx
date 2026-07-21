@@ -10,6 +10,7 @@ import {
 } from "@/db/schema";
 import { allPendingTriggers } from "@/db/mutations";
 import { isDue } from "@/lib/triggers";
+import { FULL_BLEED } from "@/lib/utils";
 import { Topbar } from "@/components/topbar";
 import { CardLink } from "@/components/card-link";
 import { ConvergePanel } from "@/components/converge-panel";
@@ -293,14 +294,14 @@ export default async function Home({
           </div>
         )}
 
-        {/* Vista Columnas: los topics uno junto a otro (carrusel a sangre,
+        {/* Vista Columnas: los topics uno junto a otro (carrusel full-bleed,
             como los threads), cada uno con sus entries a la vista (UI.md). */}
         {viewMode === "columns" && rows.length > 0 && (
-          <div className="mt-6 -mx-5 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-px-5 px-5 pb-3">
+          <div className={`mt-6 flex gap-5 overflow-x-auto pb-3 ${FULL_BLEED}`}>
             {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto, mainEntries }) => (
               <div
                 key={topic.id}
-                className="relative flex w-[85%] shrink-0 snap-center flex-col rounded-lg border border-border bg-card p-3.5 sm:w-80"
+                className="relative flex w-[85%] shrink-0 flex-col rounded-lg border border-border bg-card p-3.5 sm:w-80"
               >
                 <CardLink href={`/topics/${topic.id}`} label={topic.title} />
                 <div className="flex flex-wrap items-center gap-2">

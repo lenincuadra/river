@@ -38,9 +38,10 @@ del sistema en `CLAUDE.md`.
    `GitBranch`/`Merge` sueltos. La línea del feed **entra por debajo** de los
    chips (opacos, `z-[1]`), nunca se corta antes de llegar al riel.
 5c. **Las ramificaciones nunca se apilan**: threads y subthreads siempre van
-   al lado. Si no entran, la fila es un carrusel (a cualquier tamaño de
-   pantalla) que corta a sangre contra el borde del contenedor —sin gutter,
-   igual en desktop y mobile— y cierra con el CTA de crear, del mismo tamaño
+   al lado. Si no entran, la fila es un carrusel que ocupa **todo el ancho del
+   viewport** (full-bleed, `FULL_BLEED` en `lib/utils.ts`) en cualquier
+   tamaño de pantalla: rompe el contenedor centrado, la primera card queda
+   alineada con el contenido y cierra con el CTA de crear, del mismo tamaño
    que una card.
    Los dos niveles comparten componente (`components/branch-carousel.tsx`) y
    compositor con la misma lógica (`main-composer.tsx` / `thread-composer.tsx`).
@@ -70,9 +71,11 @@ del sistema en `CLAUDE.md`.
 
 11. **Las vistas de lista (Inbox, Radar, Reentry) comparten anatomía**: mismo
     ancho de página, fecha arriba a la derecha de cada card, acciones abajo.
-12. **En mobile, las colecciones horizontales son carrusel**: una card por
-    pantalla con la siguiente asomando, scroll-snap, y el corte en el **borde
-    del viewport** (sin padding que lo enmarque).
+12. **Todo carrusel es full-bleed**: ocupa el ancho completo del viewport en
+    todos los tamaños (`FULL_BLEED`), rompiendo el contenedor centrado; la
+    primera card se alinea con el contenido. En mobile cada card ocupa casi
+    toda la pantalla con la siguiente asomando. (Sin scroll-snap: con el
+    leading padding del full-bleed, el snap desalinea la primera card.)
 13. **La captura vive en un modal**, siempre a un ⌘K de distancia desde
     cualquier pantalla; los demás formularios largos van en diálogos. El
     compositor del timeline es la otra excepción: vive en la página.
