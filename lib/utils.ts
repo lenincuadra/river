@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Carrusel full-bleed (UI.md §5c): rompe el contenedor centrado y ocupa TODO
+// Carrusel full-bleed (design.md §5c): rompe el contenedor centrado y ocupa TODO
 // el ancho del viewport. `(100vw - 100%)/2` es exactamente el gutter entre el
 // borde del viewport y el contenido, así el margen negativo expande a los
 // bordes y el padding vuelve a alinear la primera card con el contenido. El

@@ -61,7 +61,7 @@ export default async function ThreadPage({
     ? topicEntries.find((e) => e.id === thread.origin_entry_id)
     : undefined;
 
-  // Las entries de cada subthread se ven acá mismo (UI.md §5).
+  // Las entries de cada subthread se ven acá mismo (design.md §5).
   const entriesOf = (tid: string) =>
     topicEntries
       .filter((e) => e.thread_id === tid)
@@ -150,7 +150,7 @@ export default async function ThreadPage({
             entries={threadEntries}
             events={threadEvents}
             tail={
-              // Un solo empty state al final del timeline (UI.md): lo próximo
+              // Un solo empty state al final del timeline (design.md): lo próximo
               // acá es UNA cosa — entry, o subthread si aún puede ramificarse.
               <FeedActionRow
                 icon={<Plus className="size-3.5" />}

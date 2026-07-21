@@ -22,7 +22,7 @@ import {
 
 type Mode = "entry" | "thread" | "decision";
 
-// El único empty state al final del timeline del main (UI.md): un mensaje y
+// El único empty state al final del timeline del main (design.md): un mensaje y
 // tres CTAs — Entry, Thread o Decisión. Al elegir se muestra solo ese
 // formulario ("Decisión" abre su diálogo directo); "Volver" regresa acá.
 export function MainComposer({

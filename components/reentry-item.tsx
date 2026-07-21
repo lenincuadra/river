@@ -83,7 +83,7 @@ export function ReentryItem({
   breadcrumb?: string;
 }) {
   return (
-    // Card entera clickeable (UI.md): las acciones quedan por encima del link
+    // Card entera clickeable (design.md): las acciones quedan por encima del link
     <Card className="relative">
       <CardLink href={href} label={title} />
       <CardContent>

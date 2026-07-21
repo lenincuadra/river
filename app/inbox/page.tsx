@@ -69,7 +69,7 @@ export default async function InboxPage() {
           </div>
         )}
 
-        {/* El bloque de captura vive siempre debajo de los items (UI.md):
+        {/* El bloque de captura vive siempre debajo de los items (design.md):
             misma estructura, texto según contexto. */}
         <Empty
           className={`${inboxEntries.length === 0 ? "mt-10" : "mt-6"} border border-dashed`}

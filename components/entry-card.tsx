@@ -22,7 +22,7 @@ function fmtDate(iso: string) {
 }
 
 // La card de una entry: header (autor · editado · fecha) + cuerpo + acciones,
-// todo adentro (UI.md). Editar es la acción por defecto — clic en cualquier
+// todo adentro (design.md). Editar es la acción por defecto — clic en cualquier
 // parte de la card abre el editor, salvo que se clickee un botón o se esté
 // seleccionando texto. "Crear thread" (solo en el main) es la acción explícita.
 export function EntryCard({

@@ -21,7 +21,7 @@ import {
 
 type Mode = "entry" | "subthread";
 
-// El único empty state al final del timeline de un thread (UI.md): la misma
+// El único empty state al final del timeline de un thread (design.md): la misma
 // lógica que el compositor del main, con lo que puede pasar acá — una entry,
 // o un subthread si el thread todavía puede ramificarse (regla 5).
 export function ThreadComposer({

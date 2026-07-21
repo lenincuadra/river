@@ -246,7 +246,7 @@ export default async function Home({
         {viewMode === "list" && (
           <div className="mt-6 flex flex-col gap-4">
             {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto }) => (
-              // Card entera clickeable (UI.md): link estirado + z en los links internos
+              // Card entera clickeable (design.md): link estirado + z en los links internos
               <Card key={topic.id} className="relative">
                 <CardLink href={`/topics/${topic.id}`} label={topic.title} />
                 <CardHeader>
@@ -295,7 +295,7 @@ export default async function Home({
         )}
 
         {/* Vista Columnas: los topics uno junto a otro (carrusel full-bleed,
-            como los threads), cada uno con sus entries a la vista (UI.md). */}
+            como los threads), cada uno con sus entries a la vista (design.md). */}
         {viewMode === "columns" && rows.length > 0 && (
           <div className={`mt-6 flex gap-5 overflow-x-auto pb-3 ${FULL_BLEED}`}>
             {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto, mainEntries }) => (

@@ -89,7 +89,7 @@ export default async function TopicPage({
     allThreads.filter((t) => t.parent_thread_id === threadId);
   const entryCount = (threadId: string) =>
     allEntries.filter((e) => e.thread_id === threadId).length;
-  // Las entries se ven en esta misma vista (UI.md): abrir el thread es la
+  // Las entries se ven en esta misma vista (design.md): abrir el thread es la
   // forma de aislarlo, no la única de leerlo.
   const entriesOf = (threadId: string) =>
     allEntries
@@ -198,7 +198,7 @@ export default async function TopicPage({
             mainTopicId={topic.id}
             tail={
               // Un solo empty state al final del timeline: lo próximo es UNA
-              // cosa — entry, decisión o thread (UI.md).
+              // cosa — entry, decisión o thread (design.md).
               <FeedActionRow
                 icon={<Plus className="size-3.5" />}
                 iconClassName="border-dashed border-border bg-muted text-muted-foreground"
@@ -214,7 +214,7 @@ export default async function TopicPage({
         </div>
 
         {/* Threads: misma lógica de diseño que los subthreads en la página
-            de thread — un solo componente (BranchCarousel, UI.md). */}
+            de thread — un solo componente (BranchCarousel, design.md). */}
         <BranchCarousel
           heading="Threads"
           label="Thread"

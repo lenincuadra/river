@@ -117,7 +117,7 @@ function TriggerRow({
   // No vencido: se puede revisar igual a mano (condición cumplida, backlog).
   // Las tres salidas quedan a la vista: dos son diálogos, no ocupan lugar.
   return (
-    // Card entera clickeable (UI.md): las acciones quedan por encima del link
+    // Card entera clickeable (design.md): las acciones quedan por encima del link
     <Card className="relative">
       <CardLink href={info.href} label={info.title} />
       <CardContent>

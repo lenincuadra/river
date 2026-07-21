@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 
-// Todas las acciones del topic/thread en un solo lugar (UI.md): inline en
+// Todas las acciones del topic/thread en un solo lugar (design.md): inline en
 // pantallas anchas; en angostas colapsan a un menú ⋯. Los diálogos viven
 // fuera del menú (controlados) para sobrevivir a su cierre. Archivar sin
 // motivo es imposible (regla 3); snooze siempre pasa por un disparador;

@@ -59,7 +59,7 @@ const EVENT_META: Record<
 // Fila extra al final del timeline con el mismo layout que un item del feed:
 // así la línea vertical continúa hasta las acciones (agregar entry, decidir)
 // en vez de cortarse antes de un bloque suelto.
-// Ícono del timeline (UI.md): tamaño y forma únicos en toda la app —
+// Ícono del timeline (design.md): tamaño y forma únicos en toda la app —
 // cuadrado size-6 con bordes redondeados, glifo size-3.5 adentro.
 export const TIMELINE_ICON =
   "z-[1] flex size-6 shrink-0 items-center justify-center rounded-md border";
@@ -111,14 +111,14 @@ export function Feed({
   return (
     <div className="relative">
       {/* La línea sigue hacia abajo (bottom-0): el timeline es infinito y
-          continúa en el riel de threads (UI.md). */}
+          continúa en el riel de threads (design.md). */}
       <div className="absolute bottom-0 left-[11.5px] top-3 w-px bg-border" />
       <div className="flex flex-col gap-5">
         {items.map((item) => {
           if (item.kind === "entry") {
             const e = item.entry;
             // Afuera del card queda solo el ícono (qué es); autor, fecha y
-            // acciones viven adentro, sin líneas divisorias (UI.md).
+            // acciones viven adentro, sin líneas divisorias (design.md).
             return (
               <div key={`en-${e.id}`} className="flex gap-3">
                 <span className={`${TIMELINE_ICON} border-border bg-muted text-add`}>

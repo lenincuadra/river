@@ -2,7 +2,7 @@
 
 # CLAUDE.md — River
 
-River es una app **personal y local** (un solo usuario, sin cuentas) para registrar la línea de vida de temas, ideas, feedback y decisiones. El documento fundacional es `river-plan.md`: leerlo completo antes de tocar código. La dirección visual definitiva está en `river-wireframe-board-v3.html`; los principios de interfaz (simplicidad, timeline, acciones, responsive) en `UI.md` — cumplirlos en todo cambio de UI.
+River es una app **personal y local** (un solo usuario, sin cuentas) para registrar la línea de vida de temas, ideas, feedback y decisiones. El documento fundacional es `river-plan.md`: leerlo completo antes de tocar código. La dirección visual definitiva está en `river-wireframe-board-v3.html`; los principios de interfaz (simplicidad, timeline, acciones, responsive) en `design.md` — cumplirlos en todo cambio de UI.
 
 ## Reglas del sistema (inviolables)
 

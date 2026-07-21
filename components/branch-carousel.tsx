@@ -17,7 +17,7 @@ export type Branch = {
   // "desde una entry de Martina" (threads con entry de origen)
   origin?: string;
   entryCount: number;
-  // Las entries se ven acá mismo (UI.md §5); abrir la rama es para aislarla.
+  // Las entries se ven acá mismo (design.md §5); abrir la rama es para aislarla.
   entries: { id: string; author: string; body: string }[];
   // Solo threads: sus subthreads (regla 5: los subthreads no se ramifican).
   children?: {
@@ -30,7 +30,7 @@ export type Branch = {
 };
 
 // La sección de ramificaciones — threads de un topic o subthreads de un
-// thread — con una sola lógica de diseño (UI.md §5, 5b, 5c): la línea del
+// thread — con una sola lógica de diseño (design.md §5, 5b, 5c): la línea del
 // feed baja hasta el riel, el riel une los íconos, las columnas van siempre
 // al lado (carrusel a cualquier tamaño) y el CTA de crear cierra la fila con
 // el mismo tamaño que una card.
@@ -59,7 +59,7 @@ export function BranchCarousel({
   return (
     <div className="relative mt-10">
       {/* La línea del feed baja y toca exactamente la línea horizontal del
-          riel (UI.md §5): arranca en el borde del feed (-top-10) y mide justo
+          riel (design.md §5): arranca en el borde del feed (-top-10) y mide justo
           hasta el riel (5.5rem = 88px), donde se dividen los threads. Ni más
           ni menos. */}
       <span
@@ -69,7 +69,7 @@ export function BranchCarousel({
       <h2 className="pl-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {heading}
       </h2>
-      {/* Full-bleed a todo el viewport (UI.md §5c): el carrusel usa todo el
+      {/* Full-bleed a todo el viewport (design.md §5c): el carrusel usa todo el
           ancho, la primera card queda alineada con el feed. */}
       <div className={`mt-4 flex gap-5 overflow-x-auto pb-3 ${FULL_BLEED}`}>
         {branches.map((b) => (
@@ -95,7 +95,7 @@ export function BranchCarousel({
 
             {/* Card entera clickeable; adentro va todo: qué es, de dónde
                 viene, fecha, y sus entries a la vista. El ícono de thread ya
-                está en el chip de arriba (UI.md), no se repite en el título. */}
+                está en el chip de arriba (design.md), no se repite en el título. */}
             <div className="relative mt-2 flex-1 rounded-lg border border-border bg-card p-3.5">
               <CardLink href={b.href} label={b.title} />
               <div className="text-xs text-muted-foreground">
@@ -149,10 +149,10 @@ export function BranchCarousel({
         ))}
 
         {/* Cierre del carrusel: empty state para ramificar, del mismo tamaño
-            que una card (UI.md §5c). */}
+            que una card (design.md §5c). */}
         <div className="relative flex w-[85%] shrink-0 flex-col sm:w-80">
           <span aria-hidden className="absolute left-3 top-3 h-5 w-px bg-border" />
-          {/* Chip del template con el mismo dash que la card que acompaña (UI.md). */}
+          {/* Chip del template con el mismo dash que la card que acompaña (design.md). */}
           <span
             className={`${TIMELINE_ICON} relative border-dashed border-border bg-muted text-muted-foreground`}
           >

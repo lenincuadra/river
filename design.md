@@ -1,4 +1,4 @@
-# UI.md — Principios de interfaz de River
+# design.md — Principios de interfaz de River
 
 La regla madre: **la UI tiene que ser muy simple de entender.** Ante la duda,
 menos elementos, menos variantes, menos decoración. Este documento baja esa
