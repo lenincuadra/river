@@ -18,15 +18,16 @@ import type { events as eventsTable } from "@/db/schema";
 type EventType = (typeof eventsTable.$inferSelect)["type"];
 type IconType = ComponentType<{ className?: string }>;
 
-// En River las ramas nacen del riel/main a la izquierda y crecen hacia la
-// derecha; el glifo de thread y el de convergencia se espejan para apuntar en
-// esa dirección (UI.md). Son la única fuente de verdad del ícono de thread y
-// del de convergencia en toda la app: importar estos, no GitBranch/Merge.
+// En River el timeline fluye hacia abajo, así que estos dos glifos se espejan
+// en vertical (-scale-y-100): el thread nace arriba y su rama baja hacia la
+// derecha (como cuelgan los threads); la convergencia apunta hacia abajo, a
+// donde 2+ líneas confluyen en una. Son la única fuente de verdad del ícono de
+// thread y del de convergencia en toda la app: importar estos, no GitBranch/Merge.
 export function ThreadIcon({ className }: { className?: string }) {
-  return <GitBranch className={cn("-scale-x-100", className)} />;
+  return <GitBranch className={cn("-scale-y-100", className)} />;
 }
 export function ConvergeIcon({ className }: { className?: string }) {
-  return <Merge className={cn("-scale-x-100", className)} />;
+  return <Merge className={cn("-scale-y-100", className)} />;
 }
 
 // Íconos Lucide por tipo de evento: un solo lugar para que el feed vertical y

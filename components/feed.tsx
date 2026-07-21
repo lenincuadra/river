@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Diamond } from "lucide-react";
 import { EVENT_ICON, ENTRY_ICON, ConvergeIcon } from "@/lib/event-icons";
-import { EntryActions } from "@/components/entry-actions";
+import { EntryCard } from "@/components/entry-card";
 import type { entries as entriesTable, events as eventsTable } from "@/db/schema";
 
 type Entry = typeof entriesTable.$inferSelect;
@@ -125,26 +125,7 @@ export function Feed({
                   <ENTRY_ICON className="size-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div
-                    id={`entry-${e.id}`}
-                    className="scroll-mt-24 rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm"
-                  >
-                    <div>
-                      <b>{e.author_label}</b> escribió
-                      {e.edited_at && (
-                        <span className="text-xs text-muted-foreground"> · editado</span>
-                      )}
-                      <span className="float-right text-xs text-muted-foreground">
-                        {fmtDate(e.created_at)}
-                      </span>
-                    </div>
-                    <p className="mt-1.5">{e.body}</p>
-                    <EntryActions
-                      entry={{ id: e.id, body: e.body }}
-                      authorLabel={e.author_label}
-                      topicId={mainTopicId}
-                    />
-                  </div>
+                  <EntryCard entry={e} topicId={mainTopicId} />
                 </div>
               </div>
             );

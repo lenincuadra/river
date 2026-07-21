@@ -57,10 +57,12 @@ export function BranchCarousel({
 }) {
   return (
     <div className="relative mt-10">
-      {/* La línea del feed sigue hacia abajo hasta el riel (UI.md §5). */}
+      {/* La línea del feed sigue hacia abajo y entra al riel (UI.md §5). Es
+          alta a propósito: sobra hacia abajo y el chip opaco (z-[1]) la tapa,
+          así llega sin cortes y queda por debajo de los íconos. */}
       <span
         aria-hidden
-        className="absolute -top-10 left-[11.5px] h-[4.75rem] w-px bg-border"
+        className="absolute -top-10 left-[11.5px] h-28 w-px bg-border"
       />
       <h2 className="pl-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {heading}

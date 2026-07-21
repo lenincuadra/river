@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, Ellipsis, Moon, Play, Star } from "lucide-react";
+import { Archive, Moon, Play, Star } from "lucide-react";
 import { archiveAction, reactivateAction, snoozeAction, shipAction } from "@/app/actions";
 import { TriggerFields } from "@/components/trigger-fields";
 import { FormDialog } from "@/components/form-dialog";
@@ -12,12 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 
 // Todas las acciones del topic/thread en un solo lugar (UI.md): inline en
 // pantallas anchas; en angostas colapsan a un menú ⋯. Los diálogos viven
@@ -98,43 +92,19 @@ export function StateActions({
       )}
 
       {actions.length > 0 && (
-        <div>
-          <div className="flex flex-wrap items-center gap-2 max-sm:hidden">
-            {actions.map((a) => (
-              <Button
-                key={a.key}
-                variant="outline"
-                size="sm"
-                className="text-muted-foreground"
-                onClick={() => setDialog(a.key)}
-              >
-                {a.icon} {a.label}
-              </Button>
-            ))}
-          </div>
-          <div className="sm:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-muted-foreground"
-                    aria-label="Acciones"
-                  />
-                }
-              >
-                <Ellipsis /> Acciones
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {actions.map((a) => (
-                  <DropdownMenuItem key={a.key} onClick={() => setDialog(a.key)}>
-                    {a.icon} {a.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+        // Botones directos: son pocos y entran (en angosto envuelven). Sin ⋯.
+        <div className="flex flex-wrap items-center gap-2">
+          {actions.map((a) => (
+            <Button
+              key={a.key}
+              variant="outline"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setDialog(a.key)}
+            >
+              {a.icon} {a.label}
+            </Button>
+          ))}
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlarmClock, Star, Plus, ArrowRight, Waves } from "lucide-react";
+import { AlarmClock, Star, Plus, ArrowRight, Waves, List, Columns3 } from "lucide-react";
 import { ConvergeIcon } from "@/lib/event-icons";
 import { db } from "@/db";
 import {
@@ -51,14 +51,26 @@ const FILTERS: Array<{ key: StateKey | "all"; label: string }> = [
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ state?: string }>;
+  searchParams: Promise<{ state?: string; view?: string }>;
 }) {
-  const { state } = await searchParams;
+  const { state, view } = await searchParams;
   const stateFilter: StateKey | "all" = (
     ["active", "snoozed", "archived"] as const
   ).includes(state as StateKey)
     ? (state as StateKey)
     : "all";
+  // Lista (apiladas) o Columnas (paralelas, una junto a otra con sus entries).
+  const viewMode: "list" | "columns" = view === "columns" ? "columns" : "list";
+  // Link que preserva el otro parámetro al cambiar uno (estado ↔ vista).
+  const withParams = (next: { state?: string; view?: string }) => {
+    const s = next.state ?? stateFilter;
+    const v = next.view ?? viewMode;
+    const params = new URLSearchParams();
+    if (s !== "all") params.set("state", s);
+    if (v !== "list") params.set("view", v);
+    const qs = params.toString();
+    return qs ? `/?${qs}` : "/";
+  };
 
   const [topics, threads, entries, events, pendingTriggers] = await Promise.all([
     db.select().from(topicsTable),
@@ -98,6 +110,13 @@ export default async function Home({
         (e) =>
           JSON.parse(e.payload) as { into_topic_id?: string; into_title?: string }
       )[0];
+    // Preview de las entries del main (para la vista Columnas): las más
+    // recientes, con autor y cuerpo recortado.
+    const mainEntries = entries
+      .filter((e) => e.topic_id === topic.id && e.thread_id === null)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 5)
+      .map((e) => ({ id: e.id, author: e.author_label, body: e.body }));
     return {
       topic,
       threadCount: threads.filter(
@@ -107,6 +126,7 @@ export default async function Home({
       decisionCount: topicEvents.filter((e) => e.type === "decision").length,
       shippedVersion,
       convergedInto,
+      mainEntries,
     };
     });
 
@@ -163,14 +183,14 @@ export default async function Home({
           reescribe.
         </p>
 
-        {/* Filtros por estado (Fase 6): responden "¿qué hago con esto ahora?" */}
-        <div className="mt-4 flex flex-wrap gap-2">
+        {/* Filtros por estado (Fase 6) + toggle de vista Lista/Columnas. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {FILTERS.map(({ key, label }) => {
             const active = stateFilter === key;
             return (
               <Link
                 key={key}
-                href={key === "all" ? "/" : `/?state=${key}`}
+                href={withParams({ state: key })}
                 className={`rounded-full border px-3 py-1 text-xs font-medium ${
                   active
                     ? "border-foreground bg-foreground text-background"
@@ -181,6 +201,30 @@ export default async function Home({
               </Link>
             );
           })}
+          <div className="ml-auto flex items-center gap-1 rounded-full border border-border p-0.5">
+            {(
+              [
+                ["list", "Lista", List],
+                ["columns", "Columnas", Columns3],
+              ] as const
+            ).map(([key, label, Icon]) => {
+              const active = viewMode === key;
+              return (
+                <Link
+                  key={key}
+                  href={withParams({ view: key })}
+                  aria-label={label}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="size-3.5" /> {label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {rows.length === 0 && (
@@ -198,54 +242,104 @@ export default async function Home({
           </Empty>
         )}
 
-        <div className="mt-6 flex flex-col gap-4">
-          {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto }) => (
-            // Card entera clickeable (UI.md): link estirado + z en los links internos
-            <Card key={topic.id} className="relative">
-              <CardLink href={`/topics/${topic.id}`} label={topic.title} />
-              <CardHeader>
+        {viewMode === "list" && (
+          <div className="mt-6 flex flex-col gap-4">
+            {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto }) => (
+              // Card entera clickeable (UI.md): link estirado + z en los links internos
+              <Card key={topic.id} className="relative">
+                <CardLink href={`/topics/${topic.id}`} label={topic.title} />
+                <CardHeader>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CardTitle className="text-base">{topic.title}</CardTitle>
+                    <StateBadge state={topic.state} />
+                    {shippedVersion && (
+                      <Badge variant="secondary"><Star /> Shipped {shippedVersion}</Badge>
+                    )}
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      activo desde {monthYear(topic.created_at)}
+                    </span>
+                  </div>
+                  {topic.description && (
+                    <CardDescription>{topic.description}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>
+                      <span className="font-semibold text-add">+{entryCount}</span>{" "}
+                      entries
+                    </span>
+                    <span>
+                      {threadCount} {threadCount === 1 ? "thread" : "threads"}
+                    </span>
+                    <span>
+                      {decisionCount}{" "}
+                      {decisionCount === 1 ? "decisión" : "decisiones"}
+                    </span>
+                  </div>
+                  {convergedInto?.into_topic_id && (
+                    <div className="mt-2 text-xs">
+                      <Link
+                        href={`/topics/${convergedInto.into_topic_id}`}
+                        className="relative z-[1] inline-flex items-center gap-1 font-medium text-merge hover:underline"
+                      >
+                        <ConvergeIcon className="size-3.5" /> convergió en {convergedInto.into_title}
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Vista Columnas: los topics uno junto a otro (carrusel a sangre,
+            como los threads), cada uno con sus entries a la vista (UI.md). */}
+        {viewMode === "columns" && rows.length > 0 && (
+          <div className="mt-6 -mx-5 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-px-5 px-5 pb-3">
+            {rows.map(({ topic, threadCount, entryCount, decisionCount, shippedVersion, convergedInto, mainEntries }) => (
+              <div
+                key={topic.id}
+                className="relative flex w-[85%] shrink-0 snap-center flex-col rounded-lg border border-border bg-card p-3.5 sm:w-80"
+              >
+                <CardLink href={`/topics/${topic.id}`} label={topic.title} />
                 <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle className="text-base">{topic.title}</CardTitle>
+                  <span className="text-sm font-bold">{topic.title}</span>
                   <StateBadge state={topic.state} />
                   {shippedVersion && (
-                    <Badge variant="secondary"><Star /> Shipped {shippedVersion}</Badge>
+                    <Badge variant="secondary"><Star /> {shippedVersion}</Badge>
                   )}
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    activo desde {monthYear(topic.created_at)}
-                  </span>
                 </div>
-                {topic.description && (
-                  <CardDescription>{topic.description}</CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   <span>
                     <span className="font-semibold text-add">+{entryCount}</span>{" "}
                     entries
                   </span>
-                  <span>
-                    {threadCount} {threadCount === 1 ? "thread" : "threads"}
-                  </span>
-                  <span>
-                    {decisionCount}{" "}
-                    {decisionCount === 1 ? "decisión" : "decisiones"}
-                  </span>
+                  <span>{threadCount} {threadCount === 1 ? "thread" : "threads"}</span>
+                  <span>{decisionCount} {decisionCount === 1 ? "decisión" : "decisiones"}</span>
                 </div>
-                {convergedInto?.into_topic_id && (
-                  <div className="mt-2 text-xs">
-                    <Link
-                      href={`/topics/${convergedInto.into_topic_id}`}
-                      className="relative z-[1] inline-flex items-center gap-1 font-medium text-merge hover:underline"
-                    >
-                      <ConvergeIcon className="size-3.5" /> convergió en {convergedInto.into_title}
-                    </Link>
+                {mainEntries.length > 0 && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {mainEntries.map((en) => (
+                      <div key={en.id} className="line-clamp-3 text-xs">
+                        <b>{en.author}</b>{" "}
+                        <span className="text-muted-foreground">{en.body}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                {convergedInto?.into_topic_id && (
+                  <Link
+                    href={`/topics/${convergedInto.into_topic_id}`}
+                    className="relative z-[1] mt-3 inline-flex items-center gap-1 text-xs font-medium text-merge hover:underline"
+                  >
+                    <ConvergeIcon className="size-3.5" /> convergió en {convergedInto.into_title}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
       </main>
     </div>

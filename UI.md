@@ -30,10 +30,13 @@ del sistema en `CLAUDE.md`.
    `bg-muted` sólido (nunca tintes translúcidos tipo `bg-add/15`); el color
    semántico lo lleva el glifo (entry=verde, thread/merge=morado, etc.). El
    chip del compositor (`+`) usa `border-dashed`, igual que la card-template
-   que acompaña. Los glifos de **thread y convergencia van espejados**
-   (`ThreadIcon`/`ConvergeIcon` en `lib/event-icons.tsx`, `-scale-x-100`) para
-   apuntar en la dirección en que las ramas nacen en la app; son la única
-   fuente de esos dos íconos — nunca `GitBranch`/`Merge` sueltos.
+   que acompaña. Los glifos de **thread y convergencia van espejados en
+   vertical** (`ThreadIcon`/`ConvergeIcon` en `lib/event-icons.tsx`,
+   `-scale-y-100`) porque el timeline fluye hacia abajo: el thread nace arriba
+   y su rama baja a la derecha; la convergencia apunta hacia abajo, adonde
+   confluyen las líneas. Son la única fuente de esos dos íconos — nunca
+   `GitBranch`/`Merge` sueltos. La línea del feed **entra por debajo** de los
+   chips (opacos, `z-[1]`), nunca se corta antes de llegar al riel.
 5c. **Las ramificaciones nunca se apilan**: threads y subthreads siempre van
    al lado. Si no entran, la fila es un carrusel (a cualquier tamaño de
    pantalla) que corta a sangre contra el borde del contenedor —sin gutter,
@@ -46,14 +49,17 @@ del sistema en `CLAUDE.md`.
 
 6. **Las acciones de una misma cosa van juntas, en un solo lugar.** Nada de
    botones repartidos por la página.
-7. **Si el espacio se achica, colapsan a un menú ⋯** (dropdown) en vez de
-   apilarse o romper el layout. Los diálogos que abre el menú se controlan
-   desde afuera para sobrevivir al cierre del menú.
+7. **Mostrá los botones, no los escondas.** Dos o tres acciones entran
+   siempre (envuelven en angosto): van directas, sin `⋯`. El menú `⋯` es solo
+   para cuando genuinamente no hay lugar; los diálogos que abre se controlan
+   desde afuera para sobrevivir a su cierre.
 8. **Sin líneas divisorias dentro de las cards** para separar contenido de
    acciones: solo aportan ruido. La separación la da el espaciado.
 9. **Una card que lleva a algún lado se abre clickeando la card entera**
    (link estirado), no solo un texto con underline. Las acciones internas
-   quedan por encima del link (`relative z-[1]`).
+   quedan por encima del link (`relative z-[1]`). En una card **editable**
+   (una entry), el clic por defecto abre el editor —salvo que se clickee una
+   acción explícita o se esté seleccionando texto.
 10. Los empty states también accionan: ofrecen el siguiente paso como CTA
     (capturar desde el inbox, volver al inicio desde el radar despejado,
     elegir Entry/Thread/Decisión en el compositor). No desaparecen cuando
@@ -70,6 +76,10 @@ del sistema en `CLAUDE.md`.
 13. **La captura vive en un modal**, siempre a un ⌘K de distancia desde
     cualquier pantalla; los demás formularios largos van en diálogos. El
     compositor del timeline es la otra excepción: vive en la página.
+14. **Una colección se puede ver en Lista o en Columnas** (paralelo). En
+    Columnas las cards van una junto a otra —el mismo carrusel a sangre de
+    las ramas— y cada una muestra sus entries. Home ofrece el toggle
+    (`?view=list|columns`).
 
 ## Sistema
 
